@@ -1,0 +1,2229 @@
+F3-PORTMIRROR-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32, IpAddress, Counter64
+             FROM SNMPv2-SMI
+    TruthValue, RowStatus, StorageType, DateAndTime,
+    VariablePointer, TEXTUAL-CONVENTION, DisplayString, MacAddress
+             FROM SNMPv2-TC
+    Ipv6Address
+             FROM IPV6-TC
+    TrafficDirection, PerfCounter64, VlanId, VlanPriority,
+    F3DisplayString, IpVersion, AdminState, OperationalState, SecondaryState, 
+    CmPmIntervalType, CmPmBinAction, PerfCounter64
+             FROM CM-COMMON-MIB
+    neIndex, shelfIndex, slotIndex
+             FROM CM-ENTITY-MIB
+    cmEthernetAccPortEntry
+             FROM CM-FACILITY-MIB
+    fsp150cm
+             FROM  ADVA-MIB;
+
+f3PortMirrorMIB MODULE-IDENTITY
+    LAST-UPDATED        "201309200000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the Port Mirror MIB definitions 
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "201310140000Z"
+    DESCRIPTION
+        "
+         Notes from release 201410130000Z,
+         (1) Added table:
+             - f3MonitorPortStatsTable
+         Notes from release 201409300000Z,
+         (1) Removed tables:
+             - f3MirrorFilterProfileAddedEntriesTable,
+             - f3MonitorPortStatsTable
+         Notes from release 201407310000Z,
+         (1) New table:
+             - f3MirrorFilterProfileAddedEntriesTable.
+         Notes from release 201407210000Z,
+         (1) New textual conventions:
+             - MirroredFramesAction,
+             - PortMirrorStatsAction.
+         (2) New column in f3MonitorPortStatsTable:
+             - f3MonitorPortStatsAction.
+         (3) New tables:
+             - f3MirrorFilterProfileTable,
+             - f3MirrorFilterProfileEntryTable,
+             - f3MirrorFilterTable,
+             - f3MirrorSessionStatsTable.
+         Notes from release 201405190000Z,
+         (1) New column in f3MirrorSessionTable:
+             - f3MirrorSessionMirrRsrcPort.
+         Notes from release 201310210000Z,
+         (1) Added table: 
+             - f3PortMirrorAccPortExtTable.
+         Notes from release 201310140000Z,
+         (1) MIB version ready for release FSP150CC 6.1.CC."
+
+    ::= {fsp150cm 29}
+
+--
+-- Textual Conventions
+--
+
+MirroredFramesAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "User action initiated on Mirror Filter Profile 
+         and Mirror Filter Profile Entry."
+    SYNTAX       INTEGER {
+                   accept     (1),
+                   deny       (2)
+                 }
+
+PortMirrorStatsAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "User action initiated on Mirror Session Stats."
+    SYNTAX       INTEGER {
+                   noAction   (1),
+                   clearStats (2)
+                 }
+
+MonitorFpTagControlType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "User action whether push tag on egress monitor flow point."
+    SYNTAX       INTEGER {
+                   none   (1),
+                   push (2)
+                 }
+
+
+PortMirrorAclRuleOperation ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Describes the acl rule operation."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   accept (1),
+                   deny (2)
+                 }
+
+-- 
+-- OID definitions
+-- 
+
+f3PortMirrorConfigObjects      OBJECT IDENTIFIER ::= {f3PortMirrorMIB 1}
+f3PortMirrorStatsObjects       OBJECT IDENTIFIER ::= {f3PortMirrorMIB 2}
+f3PortMirrorConformance        OBJECT IDENTIFIER ::= {f3PortMirrorMIB 3}
+f3PortMirrorFilterObjects      OBJECT IDENTIFIER ::= {f3PortMirrorMIB 4}
+f3PortMirrorNotifications      OBJECT IDENTIFIER ::= {f3PortMirrorMIB 5}
+
+--
+--  Mirror Session
+--
+
+f3MirrorSessionTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirrorSessionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to Mirror Session 
+             instance for configuration purposes."
+    ::= { f3PortMirrorConfigObjects 1 }
+
+f3MirrorSessionEntry OBJECT-TYPE
+    SYNTAX      F3MirrorSessionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirrorSessionTable."
+    INDEX { neIndex, f3MirrorSessionIndex }
+    ::= { f3MirrorSessionTable 1 }
+
+F3MirrorSessionEntry ::= SEQUENCE {
+    f3MirrorSessionIndex                      Integer32,
+    f3MirrorSessionSourcePort                 VariablePointer,
+    f3MirrorSessionMonitorPort                VariablePointer,
+    f3MirrorSessionSourcePortDir              TrafficDirection,
+    f3MirrorSessionTruncationCtrl             TruthValue,
+    f3MirrorSessionTruncationLength           Unsigned32,
+    f3MirrorSessionTimestampControl           TruthValue,
+    f3MirrorSessionStorageType                StorageType,
+    f3MirrorSessionRowStatus                  RowStatus,
+    f3MirrorSessionMirrRsrcPort               VariablePointer,
+    f3MirrorSessionFilterProfile              VariablePointer,
+    f3MirrorSessionAclMissAction              MirroredFramesAction
+}
+
+f3MirrorSessionIndex OBJECT-TYPE
+    SYNTAX        Integer32 (1..255)
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+          this Port Mirror Session within Network Element."
+    ::= { f3MirrorSessionEntry 1 }
+
+f3MirrorSessionSourcePort OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Pointer to a Port instance which represents 
+          Monitored Port with the Mirror Session.
+          
+          The pointer must be set to cmEthernetAccPortIndex 
+          or cmEthernetNetPortIndex instance."
+    ::= { f3MirrorSessionEntry 2 }
+
+f3MirrorSessionMonitorPort OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Pointer to a Port instance which represents 
+          Port where mirrored frames are transmitted. 
+          
+          The pointer must be set to cmEthernetAccPortIndex 
+          instance."
+    ::= { f3MirrorSessionEntry 3 }
+
+f3MirrorSessionSourcePortDir OBJECT-TYPE
+    SYNTAX        TrafficDirection
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Indicates the SourcePort traffic flow direction 
+          to be copied for transmit on the MonitorPort:
+          
+          1) INGRESS: frames received by the SourcePort 
+                     are mirrored to the transmit direction of the 
+                     MonitorPort.
+            
+          2) EGRESS: frames to be transmitted by the SourcePort 
+                    are mirrored to the transmit direction of the 
+                    MonitorPort."
+    ::= { f3MirrorSessionEntry 4 }
+
+f3MirrorSessionTruncationCtrl OBJECT-TYPE
+    SYNTAX        TruthValue
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Indicates if frame is truncated to TruncationLength 
+          before being transmitted on the Monitor Port:
+          
+          1) DISABLED: the frame is transmitted on the MonitorPort 
+                      without length modification.
+          2) ENABLED: the frame is truncated to TruncationLength 
+                     before being transmitted on the MonitorPort. 
+                     FCS is relaculated based on the truncated length."
+    ::= { f3MirrorSessionEntry 5 }
+
+f3MirrorSessionTruncationLength OBJECT-TYPE
+    SYNTAX        Unsigned32(64..1500)
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Length of mirrored frame truncation when TruncationControl is ENABLED. 
+          Possible values are 64 bytes to 1500 bytes.
+          
+          All mirrored frames transmitted on the MonitorPort will have a frame 
+          length equal to the TruncationLength where frame length is from first 
+          byte of the Destination MAC Address to last bye of the newly calculated FCS."
+    ::= { f3MirrorSessionEntry 6 }
+
+f3MirrorSessionTimestampControl OBJECT-TYPE
+    SYNTAX        TruthValue
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Indicates if timestamp information is added 
+          to a frame transmitted on the MonitorPort:
+          
+          1) DISABLED: no timestamp information is added 
+                      to a frame transmitted on the MonitorPort.
+                      
+          2) ENABLED: a timestamp is added to the frame frame 
+                     in the 10 bytes before the FCS:
+                     - For mirrored frames ingressing the SourcePort, 
+                       the timestamp is the TOD when the frame was 
+                       received on the SourcePort. 
+                     - For mirrored frames egressing the SourcePort, 
+                       the timestamp is the TOD when the frames 
+                       was transmitted on the SourcePort."
+    ::= { f3MirrorSessionEntry 7 }
+
+f3MirrorSessionStorageType OBJECT-TYPE
+    SYNTAX        StorageType
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The type of storage configured for this entry."
+    ::= { f3MirrorSessionEntry 8 }
+
+f3MirrorSessionRowStatus OBJECT-TYPE
+    SYNTAX        RowStatus
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The status of this row.  An entry MUST NOT exist in the 
+          active state unless all objects in the entry have an 
+          appropriate value, as described
+          in the description clause for each writable object.
+
+          The values of f3MirrorSessionRowStatus supported are
+          createAndGo(4) and destroy(6).  All mandatory attributes
+          must be specified in a single SNMP SET request with
+          neRowStatus value as createAndGo(4).
+          Upon successful row creation, this object has a
+          value of active(1).
+          
+          The f3MirrorSessionRowStatus object may be modified if
+          the associated instance of this object is equal to active(1)."
+    ::= { f3MirrorSessionEntry 9 }
+
+f3MirrorSessionMirrRsrcPort OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Pointer to a Port instance which represents 
+          Mirror Resource Port. 
+          
+          The pointer must be set to cmEthernetAccPortIndex 
+          instance."
+    ::= { f3MirrorSessionEntry 10 }
+
+f3MirrorSessionFilterProfile OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Pointer to a Mirror Filter Profile instance which represents 
+          Mirror Session Filter Profile. 
+          
+          The pointer must be set to f3MirrorFilterProfileName 
+          instance."
+    ::= { f3MirrorSessionEntry 11 }
+
+f3MirrorSessionAclMissAction OBJECT-TYPE
+    SYNTAX        MirroredFramesAction
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Accept: means all packets are mirrored in default, 
+         user can add ACL to discard particular packets.
+         Deny: means packets are discarded in default, 
+         with exception of which matches ACL."
+    ::= { f3MirrorSessionEntry 12 }
+
+--
+--  Access Port Port Mirror Ext Table
+--
+
+f3PortMirrorAccPortExtTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3PortMirrorAccPortExtEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to Ethernet Access Port 
+            Facilities for Port Mirror configuration purposes."
+    ::= { f3PortMirrorConfigObjects 2 }
+
+f3PortMirrorAccPortExtEntry OBJECT-TYPE
+    SYNTAX      F3PortMirrorAccPortExtEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3PortMirrorAccPortExtTable."
+    AUGMENTS { cmEthernetAccPortEntry }
+    ::= { f3PortMirrorAccPortExtTable 1 }
+
+F3PortMirrorAccPortExtEntry ::= SEQUENCE {
+    f3PortMirrorAccPortExtMonitorEnabled        TruthValue,
+    f3PortMirrorAccPortExtBufferSize            Integer32,
+    f3PortMirrorAccPortExtMirrRsrcEnabled       TruthValue
+}
+
+f3PortMirrorAccPortExtMonitorEnabled OBJECT-TYPE
+    SYNTAX      TruthValue  
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This object allows to Enable/Disable Monitor Mode on Port."
+    ::= { f3PortMirrorAccPortExtEntry 1 }
+
+f3PortMirrorAccPortExtBufferSize OBJECT-TYPE
+    SYNTAX      Integer32 (10..15360)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Applicable when port is in Monitor Mode."
+    ::= { f3PortMirrorAccPortExtEntry 2 }
+
+f3PortMirrorAccPortExtMirrRsrcEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This object allows to Enable/Disable Mirror Resource on Port."
+    ::= { f3PortMirrorAccPortExtEntry 3 }
+
+
+
+--
+--  egress monitor fp
+--
+
+f3PortMirrorEgressMonitorFpTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3PortMirrorEgressMonitorFpEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to mirror flow point 
+             instance for configuration purposes."
+    ::= { f3PortMirrorConfigObjects 3 }
+
+f3PortMirrorEgressMonitorFpEntry OBJECT-TYPE
+    SYNTAX      F3PortMirrorEgressMonitorFpEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3PortMirrorEgressMonitorFpTable."
+    INDEX { neIndex, f3PortMirrorEgressMonitorFpIndex }
+    ::= { f3PortMirrorEgressMonitorFpTable 1 }
+
+F3PortMirrorEgressMonitorFpEntry ::= SEQUENCE {
+    f3PortMirrorEgressMonitorFpIndex                Integer32,
+    f3PortMirrorEgressMonitorFpName                 DisplayString,
+    f3PortMirrorEgressMonitorFpAssoInterface        VariablePointer,
+    f3PortMirrorEgressMonitorFpStagControl          MonitorFpTagControlType,
+    f3PortMirrorEgressMonitorFpStagVlanId           VlanId,
+    f3PortMirrorEgressMonitorFpStagVlanPri          VlanPriority,
+    f3PortMirrorEgressMonitorFpCtagControl          MonitorFpTagControlType,
+    f3PortMirrorEgressMonitorFpCtagVlanId           VlanId,
+    f3PortMirrorEgressMonitorFpCtagVlanPri          VlanPriority,
+    f3PortMirrorEgressMonitorFpCos                  Integer32,
+    f3PortMirrorEgressMonitorFpCirHi                Unsigned32,
+    f3PortMirrorEgressMonitorFpCirLo                Unsigned32,
+    f3PortMirrorEgressMonitorFpEirHi                Unsigned32,
+    f3PortMirrorEgressMonitorFpEirLo                Unsigned32,
+    f3PortMirrorEgressMonitorFpBufferSize           Unsigned32,
+    f3PortMirrorEgressMonitorFpStorageType          StorageType,
+    f3PortMirrorEgressMonitorFpRowStatus            RowStatus,
+    f3PortMirrorEgressMonitorFpEncapEntity          VariablePointer
+}
+
+f3PortMirrorEgressMonitorFpIndex OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+          this Port Mirror egress monitor flow point within Network Element."
+    ::= { f3PortMirrorEgressMonitorFpEntry 1 }
+
+f3PortMirrorEgressMonitorFpName OBJECT-TYPE
+    SYNTAX        DisplayString
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Egress monitor flow point name."
+    ::= { f3PortMirrorEgressMonitorFpEntry 2 }
+
+f3PortMirrorEgressMonitorFpAssoInterface OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The associated interface, it could be port, shg, erp."
+    ::= { f3PortMirrorEgressMonitorFpEntry 3 }
+
+f3PortMirrorEgressMonitorFpStagControl OBJECT-TYPE
+    SYNTAX        MonitorFpTagControlType
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Whether push the stag."
+    ::= { f3PortMirrorEgressMonitorFpEntry 4 }
+
+f3PortMirrorEgressMonitorFpStagVlanId OBJECT-TYPE
+    SYNTAX        VlanId
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The stag vlan Id value."
+    ::= { f3PortMirrorEgressMonitorFpEntry 5 }
+
+f3PortMirrorEgressMonitorFpStagVlanPri OBJECT-TYPE
+    SYNTAX        VlanPriority
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The stag vlan priority value."
+    ::= { f3PortMirrorEgressMonitorFpEntry 6 }
+
+f3PortMirrorEgressMonitorFpCtagControl OBJECT-TYPE
+    SYNTAX        MonitorFpTagControlType
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Whether push the ctag."
+    ::= { f3PortMirrorEgressMonitorFpEntry 7 }
+
+f3PortMirrorEgressMonitorFpCtagVlanId OBJECT-TYPE
+    SYNTAX        VlanId
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The ctag vlan Id value."
+    ::= { f3PortMirrorEgressMonitorFpEntry 8 }
+
+f3PortMirrorEgressMonitorFpCtagVlanPri OBJECT-TYPE
+    SYNTAX        VlanPriority
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The ctag vlan priority value."
+    ::= { f3PortMirrorEgressMonitorFpEntry 9 }
+
+f3PortMirrorEgressMonitorFpCos OBJECT-TYPE
+    SYNTAX        Integer32 (0..7)
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The ctag vlan priority value."
+    ::= { f3PortMirrorEgressMonitorFpEntry 10 }
+
+f3PortMirrorEgressMonitorFpCirHi OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The CIR value high 32 bits part."
+    ::= { f3PortMirrorEgressMonitorFpEntry 11 }
+
+f3PortMirrorEgressMonitorFpCirLo OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The CIR value low 32 bits part."
+    ::= { f3PortMirrorEgressMonitorFpEntry 12 }
+
+f3PortMirrorEgressMonitorFpEirHi OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The EIR value high 32 bits part."
+    ::= { f3PortMirrorEgressMonitorFpEntry 13 }
+
+f3PortMirrorEgressMonitorFpEirLo OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The EIR value low 32 bits part."
+    ::= { f3PortMirrorEgressMonitorFpEntry 14 }
+
+f3PortMirrorEgressMonitorFpBufferSize OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The buffer size value."
+    ::= { f3PortMirrorEgressMonitorFpEntry 15 }
+
+f3PortMirrorEgressMonitorFpStorageType OBJECT-TYPE
+    SYNTAX        StorageType
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The type of storage configured for this entry."
+    ::= { f3PortMirrorEgressMonitorFpEntry 16 }
+
+f3PortMirrorEgressMonitorFpRowStatus OBJECT-TYPE
+    SYNTAX        RowStatus
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "The status of this row.  An entry MUST NOT exist in the 
+          active state unless all objects in the entry have an 
+          appropriate value, as described
+          in the description clause for each writable object.
+
+          The values of f3PortMirrorEgressMonitorFpRowStatus supported are
+          createAndGo(4) and destroy(6).  All mandatory attributes
+          must be specified in a single SNMP SET request with
+          neRowStatus value as createAndGo(4).
+          Upon successful row creation, this object has a
+          value of active(1).
+          
+          The f3PortMirrorEgressMonitorFpRowStatus object may be modified if
+          the associated instance of this object is equal to active(1)."
+    ::= { f3PortMirrorEgressMonitorFpEntry 17 }
+
+f3PortMirrorEgressMonitorFpEncapEntity OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "Encapsulation entity of the Egress monitor flow point."
+    ::= { f3PortMirrorEgressMonitorFpEntry 18 }
+
+
+--
+--  PortMirror ACL Rule Table
+--
+f3PortMirrorAclRuleTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3PortMirrorAclRuleEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the PortMirror ACL rule."
+    ::= { f3PortMirrorConfigObjects 4 }
+
+f3PortMirrorAclRuleEntry  OBJECT-TYPE
+    SYNTAX      F3PortMirrorAclRuleEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3PortMirrorAclRuleTable."
+    INDEX { neIndex, f3MirrorSessionIndex, f3PortMirrorAclRuleIndex }
+    ::= { f3PortMirrorAclRuleTable 1 }
+
+F3PortMirrorAclRuleEntry ::= SEQUENCE {
+    f3PortMirrorAclRuleIndex                                     Integer32,
+    f3PortMirrorAclRuleAlias                                     F3DisplayString,
+    f3PortMirrorAclRuleSrcIpv4AddressControl                     TruthValue,
+    f3PortMirrorAclRuleDynamicSrcIpControl                       TruthValue,
+    f3PortMirrorAclRuleSrcIpv4AddressLowLimit                    IpAddress,
+    f3PortMirrorAclRuleDstIpv4AddressControl                     TruthValue,
+    f3PortMirrorAclRuleDstIpv4AddressLowLimit                    IpAddress,
+    f3PortMirrorAclRuleIpv4PriorityControl                       TruthValue,
+    f3PortMirrorAclRuleIpv4PriorityLowLimit                      Integer32,
+    f3PortMirrorAclRuleProtocolControl                           TruthValue,
+    f3PortMirrorAclRuleProtocolNumber                            Integer32,
+    f3PortMirrorAclRuleSrcPortControl                            TruthValue,
+    f3PortMirrorAclRuleSrcPortLowLimit                           Integer32,
+    f3PortMirrorAclRuleSrcPortHighLimit                          Integer32,
+    f3PortMirrorAclRuleDstPortControl                            TruthValue,
+    f3PortMirrorAclRuleDstPortLowLimit                           Integer32,
+    f3PortMirrorAclRuleDstPortHighLimit                          Integer32,
+    f3PortMirrorAclRulePriority                                  Integer32,
+    f3PortMirrorAclRuleCOS                                       Integer32,
+    f3PortMirrorAclRuleOperation                                 PortMirrorAclRuleOperation,
+    f3PortMirrorAclRuleSummary                                   F3DisplayString,
+    f3PortMirrorAclRuleCosOverrideControl                        TruthValue,
+    f3PortMirrorAclRuleSrcMacAddressControl                      TruthValue,
+    f3PortMirrorAclRuleDynamicSrcMacAddressControl               TruthValue,
+    f3PortMirrorAclRuleSrcMacAddress                             MacAddress,
+    f3PortMirrorAclRuleSrcMacAddressMask                         MacAddress,
+    f3PortMirrorAclRuleDstMacAddressControl                      TruthValue,
+    f3PortMirrorAclRuleDstMacAddress                             MacAddress,
+    f3PortMirrorAclRuleDstMacAddressMask                         MacAddress,
+    f3PortMirrorAclRuleOuterVlanVIDControl                       TruthValue,
+    f3PortMirrorAclRuleOuterVlanVIDLowLimit                      VlanId,
+    f3PortMirrorAclRuleOuterVlanVIDHighLimit                     VlanId,
+    f3PortMirrorAclRuleInnerVlanVIDControl                       TruthValue,
+    f3PortMirrorAclRuleInnerVlanVIDLowLimit                      VlanId,
+    f3PortMirrorAclRuleInnerVlanVIDHighLimit                     VlanId,
+    f3PortMirrorAclRuleOuterVlanPcpControl                       TruthValue,
+    f3PortMirrorAclRuleOuterVlanPcpLowLimit                      VlanPriority,
+    f3PortMirrorAclRuleOuterVlanPcpHighLimit                     VlanPriority,
+    f3PortMirrorAclRuleInnerVlanPcpControl                       TruthValue,
+    f3PortMirrorAclRuleInnerVlanPcpLowLimit                      VlanPriority,
+    f3PortMirrorAclRuleInnerVlanPcpHighLimit                     VlanPriority,
+    f3PortMirrorAclRuleOuterVlanDeiControl                       TruthValue,
+    f3PortMirrorAclRuleOuterVlanDei                              Unsigned32,
+    f3PortMirrorAclRuleEtherTypeControl                          TruthValue,
+    f3PortMirrorAclRuleEtherType                                 Integer32,
+    f3PortMirrorAclRuleTcpFlagsControl                           TruthValue,
+    f3PortMirrorAclRuleTcpFlags                                  Integer32,
+    f3PortMirrorAclRuleSrcIpv4AddressHighLimit                   IpAddress,
+    f3PortMirrorAclRuleDstIpv4AddressHighLimit                   IpAddress,
+    f3PortMirrorAclRuleIpv4PriorityHighLimit                     Integer32,
+    f3PortMirrorAclRuleStorageType                               StorageType,
+    f3PortMirrorAclRuleRowStatus                                 RowStatus,
+    f3PortMirrorAclRuleAdminState                                AdminState,
+    f3PortMirrorAclRuleActive                                    TruthValue,
+    f3PortMirrorAclRuleSrcIpV6AddressControl                     TruthValue,
+    f3PortMirrorAclRuleSrcIpV6Address                            Ipv6Address,
+    f3PortMirrorAclRuleSrcIpV6AddressPrefixLen                   Integer32,
+    f3PortMirrorAclRuleDstIpV6AddressControl                     TruthValue,
+    f3PortMirrorAclRuleDstIpV6Address                            Ipv6Address,
+    f3PortMirrorAclRuleDstIpV6AddressPrefixLen                   Integer32,
+    f3PortMirrorAclRuleIpV6FlowLabelControl                      TruthValue,
+    f3PortMirrorAclRuleIpV6FlowLabel                             Integer32
+}
+
+f3PortMirrorAclRuleIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule number."
+    ::= { f3PortMirrorAclRuleEntry 1 }
+
+f3PortMirrorAclRuleAlias OBJECT-TYPE
+    SYNTAX      F3DisplayString (SIZE (0..256))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule alias."
+    ::= { f3PortMirrorAclRuleEntry 2 }
+
+f3PortMirrorAclRuleSrcIpv4AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source IPv4 Adress control whether enabled."
+    ::= { f3PortMirrorAclRuleEntry 3 }
+
+f3PortMirrorAclRuleDynamicSrcIpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic source IPv4 Adress control whether enabled."
+    ::= { f3PortMirrorAclRuleEntry 4 }
+
+f3PortMirrorAclRuleSrcIpv4AddressLowLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source IPv4 Adress low limit."
+    ::= { f3PortMirrorAclRuleEntry 5 }
+
+f3PortMirrorAclRuleDstIpv4AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Destination IPv4 Adress control whether enabled."
+    ::= { f3PortMirrorAclRuleEntry 6 }
+
+f3PortMirrorAclRuleDstIpv4AddressLowLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Destination IPv4 Adress low limit."
+    ::= { f3PortMirrorAclRuleEntry 7 }
+
+f3PortMirrorAclRuleIpv4PriorityControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule IPv4 Priority control whether enabled."
+    ::= { f3PortMirrorAclRuleEntry 8 }
+
+f3PortMirrorAclRuleIpv4PriorityLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule IPv4 priority low limit."
+    ::= { f3PortMirrorAclRuleEntry 9 }
+
+f3PortMirrorAclRuleProtocolControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule protocol control whether enabled."
+    ::= { f3PortMirrorAclRuleEntry 10 }
+
+f3PortMirrorAclRuleProtocolNumber OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule protocol number."
+    ::= { f3PortMirrorAclRuleEntry 11 }
+
+f3PortMirrorAclRuleSrcPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source port whether enabled."
+    ::= { f3PortMirrorAclRuleEntry 12 }
+
+f3PortMirrorAclRuleSrcPortLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source port low limit."
+    ::= { f3PortMirrorAclRuleEntry 13 }
+
+f3PortMirrorAclRuleSrcPortHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source port low limit."
+    ::= { f3PortMirrorAclRuleEntry 14 }
+
+f3PortMirrorAclRuleDstPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination port whether enabled."
+    ::= { f3PortMirrorAclRuleEntry 15 }
+
+f3PortMirrorAclRuleDstPortLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination port low limit."
+    ::= { f3PortMirrorAclRuleEntry 16 }
+
+f3PortMirrorAclRuleDstPortHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination port low limit."
+    ::= { f3PortMirrorAclRuleEntry 17 }
+
+f3PortMirrorAclRulePriority OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule priority."
+    ::= { f3PortMirrorAclRuleEntry 18 }
+
+f3PortMirrorAclRuleCOS OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule class of service."
+    ::= { f3PortMirrorAclRuleEntry 19 }
+
+f3PortMirrorAclRuleOperation OBJECT-TYPE
+    SYNTAX      PortMirrorAclRuleOperation
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule action."
+    ::= { f3PortMirrorAclRuleEntry 20 }
+
+f3PortMirrorAclRuleSummary OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule summary."
+    ::= { f3PortMirrorAclRuleEntry 21 }
+
+f3PortMirrorAclRuleCosOverrideControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule COS Override control."
+    ::= { f3PortMirrorAclRuleEntry 22 }
+
+f3PortMirrorAclRuleSrcMacAddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Source MAC address control."
+    ::= { f3PortMirrorAclRuleEntry 23 }
+
+f3PortMirrorAclRuleDynamicSrcMacAddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Source MAC address control."
+    ::= { f3PortMirrorAclRuleEntry 24 }
+
+f3PortMirrorAclRuleSrcMacAddress OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Source MAC address."
+    ::= { f3PortMirrorAclRuleEntry 25 }
+
+f3PortMirrorAclRuleSrcMacAddressMask OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Source MAC address mask."
+    ::= { f3PortMirrorAclRuleEntry 26 }
+
+f3PortMirrorAclRuleDstMacAddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Destination MAC address control."
+    ::= { f3PortMirrorAclRuleEntry 27 }
+
+f3PortMirrorAclRuleDstMacAddress OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Destination MAC address."
+    ::= { f3PortMirrorAclRuleEntry 28 }
+
+f3PortMirrorAclRuleDstMacAddressMask OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Destination MAC address mask."
+    ::= { f3PortMirrorAclRuleEntry 29 }
+
+f3PortMirrorAclRuleOuterVlanVIDControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer VID control."
+    ::= { f3PortMirrorAclRuleEntry 30 }
+
+f3PortMirrorAclRuleOuterVlanVIDLowLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer Vlan ID low limit."
+    ::= { f3PortMirrorAclRuleEntry 31 }
+
+f3PortMirrorAclRuleOuterVlanVIDHighLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer Vlan ID high limit."
+    ::= { f3PortMirrorAclRuleEntry 32 }
+
+f3PortMirrorAclRuleInnerVlanVIDControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner VID control."
+    ::= { f3PortMirrorAclRuleEntry 33 }
+
+f3PortMirrorAclRuleInnerVlanVIDLowLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner Vlan ID low limit."
+    ::= { f3PortMirrorAclRuleEntry 34 }
+
+f3PortMirrorAclRuleInnerVlanVIDHighLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Inner Vlan ID high limit."
+    ::= { f3PortMirrorAclRuleEntry 35 }
+
+f3PortMirrorAclRuleOuterVlanPcpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan PCP control."
+    ::= { f3PortMirrorAclRuleEntry 36 }
+
+f3PortMirrorAclRuleOuterVlanPcpLowLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan PCP priority low limit."
+    ::= { f3PortMirrorAclRuleEntry 37 }
+
+f3PortMirrorAclRuleOuterVlanPcpHighLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan PCP priority high limit."
+    ::= { f3PortMirrorAclRuleEntry 38 }
+
+f3PortMirrorAclRuleInnerVlanPcpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner vlan PCP control."
+    ::= { f3PortMirrorAclRuleEntry 39 }
+
+f3PortMirrorAclRuleInnerVlanPcpLowLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner vlan PCP priority low limit."
+    ::= { f3PortMirrorAclRuleEntry 40 }
+
+f3PortMirrorAclRuleInnerVlanPcpHighLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner vlan PCP priority high limit."
+    ::= { f3PortMirrorAclRuleEntry 41 }
+
+f3PortMirrorAclRuleOuterVlanDeiControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan DEI control."
+    ::= { f3PortMirrorAclRuleEntry 42 }
+
+f3PortMirrorAclRuleOuterVlanDei OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..1)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan DEI."
+    ::= { f3PortMirrorAclRuleEntry 43 }
+
+f3PortMirrorAclRuleEtherTypeControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan ether type control."
+    ::= { f3PortMirrorAclRuleEntry 44 }
+
+f3PortMirrorAclRuleEtherType OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan ether type."
+    ::= { f3PortMirrorAclRuleEntry 45 }
+
+f3PortMirrorAclRuleTcpFlagsControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan TCP flags control."
+    ::= { f3PortMirrorAclRuleEntry 46 }
+
+f3PortMirrorAclRuleTcpFlags OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan TCP flags."
+    ::= { f3PortMirrorAclRuleEntry 47 }
+
+f3PortMirrorAclRuleSrcIpv4AddressHighLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source ipv4 adress high limit."
+    ::= { f3PortMirrorAclRuleEntry 48 }
+
+f3PortMirrorAclRuleDstIpv4AddressHighLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination ipv4 adress high limit."
+    ::= { f3PortMirrorAclRuleEntry 49 }
+
+f3PortMirrorAclRuleIpv4PriorityHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule ipv4 priority high limit."
+    ::= { f3PortMirrorAclRuleEntry 50 }
+
+f3PortMirrorAclRuleStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3PortMirrorAclRuleEntry 51 }
+
+f3PortMirrorAclRuleRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+ 	
+          	The values of f3PortMirrorAclRuleRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3PortMirrorAclRuleRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+ 	
+          	The f3PortMirrorAclRuleRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3PortMirrorAclRuleEntry 52 }
+
+f3PortMirrorAclRuleAdminState  OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object allows user configure the Acl Rule in in-service or management state."
+    ::= { f3PortMirrorAclRuleEntry 53 }
+
+f3PortMirrorAclRuleActive OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule active control."
+    ::= { f3PortMirrorAclRuleEntry 54 }
+
+f3PortMirrorAclRuleSrcIpV6AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source ipv6 adress control."
+    ::= { f3PortMirrorAclRuleEntry 55 }
+
+f3PortMirrorAclRuleSrcIpV6Address OBJECT-TYPE
+    SYNTAX      Ipv6Address
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source ipv6 adress."
+    ::= { f3PortMirrorAclRuleEntry 56 }
+
+f3PortMirrorAclRuleSrcIpV6AddressPrefixLen OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source ipv6 adress prefix length."
+    ::= { f3PortMirrorAclRuleEntry 57 }
+
+f3PortMirrorAclRuleDstIpV6AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination ipv6 adress control."
+    ::= { f3PortMirrorAclRuleEntry 58 }
+
+f3PortMirrorAclRuleDstIpV6Address OBJECT-TYPE
+    SYNTAX      Ipv6Address
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination ipv6 adress."
+    ::= { f3PortMirrorAclRuleEntry 59 }
+
+f3PortMirrorAclRuleDstIpV6AddressPrefixLen OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination ipv6 adress prefix length."
+    ::= { f3PortMirrorAclRuleEntry 60 }
+
+f3PortMirrorAclRuleIpV6FlowLabelControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule IPv6 flow lable control."
+    ::= { f3PortMirrorAclRuleEntry 61 }
+
+f3PortMirrorAclRuleIpV6FlowLabel OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule IPv6 flow lable."
+    ::= { f3PortMirrorAclRuleEntry 62 }
+
+
+--
+--  Monitor Port Statistics Table 
+--
+
+f3MonitorPortStatsTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MonitorPortStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to the Access Port 
+             related Monitor Port Statistics."
+    ::= { f3PortMirrorStatsObjects 1 }
+
+f3MonitorPortStatsEntry OBJECT-TYPE
+    SYNTAX      F3MonitorPortStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MonitorPortStatsTable."
+    INDEX { neIndex, shelfIndex, slotIndex, f3MonitorPortStatsIndex }
+    ::= { f3MonitorPortStatsTable 1 }
+
+F3MonitorPortStatsEntry ::= SEQUENCE {
+    f3MonitorPortStatsIndex                      Integer32,
+    f3MonitorPortStatsTailDropped                PerfCounter64
+}
+
+f3MonitorPortStatsIndex OBJECT-TYPE
+    SYNTAX        Integer32 (1..255)
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+          this Ethernet Access Port (Monitor Port) statistics"
+    ::= { f3MonitorPortStatsEntry 1 }
+
+f3MonitorPortStatsTailDropped OBJECT-TYPE
+    SYNTAX        PerfCounter64
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "64-bit rollover count for taildrops"
+    ::= { f3MonitorPortStatsEntry 2 }
+
+--
+--  Mirror Session Statistics Table 
+--
+
+f3MirrorSessionStatsTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirrorSessionStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding 
+             to the Mirror Session Statistics."
+    ::= { f3PortMirrorStatsObjects 2 }
+
+f3MirrorSessionStatsEntry OBJECT-TYPE
+    SYNTAX      F3MirrorSessionStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirrorSessionStatsTable."
+    INDEX { neIndex, f3MirrorSessionStatsIndex }
+    ::= { f3MirrorSessionStatsTable 1 }
+
+F3MirrorSessionStatsEntry ::= SEQUENCE {
+    f3MirrorSessionStatsIndex                      Integer32,
+    f3MirrorSessionStatsMirrFilterFrameDiscard     PerfCounter64,
+    f3MirrorSessionStatsAction                     PortMirrorStatsAction,
+    f3MirrorSessionStatsInsufficientBwFrameDiscard PerfCounter64
+}
+
+f3MirrorSessionStatsIndex OBJECT-TYPE
+    SYNTAX        Integer32 (1..255)
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+          this Mirror Session statistics"
+    ::= { f3MirrorSessionStatsEntry 1 }
+
+f3MirrorSessionStatsMirrFilterFrameDiscard OBJECT-TYPE
+    SYNTAX        PerfCounter64
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "The number of frames dropped due to 
+          a filter having a DENY action."
+    ::= { f3MirrorSessionStatsEntry 2 }
+
+f3MirrorSessionStatsAction OBJECT-TYPE
+    SYNTAX        PortMirrorStatsAction
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "User action performed on Monitor Port Stats."
+    ::= { f3MirrorSessionStatsEntry 3 }
+
+f3MirrorSessionStatsInsufficientBwFrameDiscard OBJECT-TYPE
+    SYNTAX        PerfCounter64
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "The number of frames dropped due to 
+          bandwidth is insufficient."
+    ::= { f3MirrorSessionStatsEntry 4 }
+
+--
+-- PortMirror acl rule Current Statistics Table
+--
+f3PortMirrorAclRuleStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3PortMirrorAclRuleStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of PortMirror acl rule related statistics.  
+             These reflect the current data."
+    ::= { f3PortMirrorStatsObjects 3 }
+
+f3PortMirrorAclRuleStatsEntry OBJECT-TYPE
+    SYNTAX      F3PortMirrorAclRuleStatsEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3PortMirrorAclRuleStatsTable.
+             Entries exist in this table for each Acl rule."
+    INDEX { neIndex, f3MirrorSessionIndex, f3PortMirrorAclRuleIndex, f3PortMirrorAclRuleStatsIndex }
+    ::= { f3PortMirrorAclRuleStatsTable 1 }
+
+F3PortMirrorAclRuleStatsEntry ::= SEQUENCE {
+    f3PortMirrorAclRuleStatsIndex               Integer32,
+    f3PortMirrorAclRuleStatsIntervalType        CmPmIntervalType,
+    f3PortMirrorAclRuleStatsValid               TruthValue,
+    f3PortMirrorAclRuleStatsAction              CmPmBinAction,
+    f3PortMirrorAclRuleStatsRuleMatch           PerfCounter64
+}
+
+f3PortMirrorAclRuleStatsIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this PortMirror flow point statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3PortMirrorAclRuleStatsEntry 1 }
+
+f3PortMirrorAclRuleStatsIntervalType OBJECT-TYPE
+    SYNTAX      CmPmIntervalType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Interval over which Performance Monitoring data is collected."
+    ::= { f3PortMirrorAclRuleStatsEntry 2 }
+
+f3PortMirrorAclRuleStatsValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3PortMirrorAclRuleStatsEntry 3 }
+
+f3PortMirrorAclRuleStatsAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3PortMirrorAclRuleStatsEntry 4 }
+
+f3PortMirrorAclRuleStatsRuleMatch OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets matching the ACL rule."
+     ::= { f3PortMirrorAclRuleStatsEntry 5 }
+
+--
+-- PortMirror acl rule history Statistics Table
+--
+f3PortMirrorAclRuleHistoryTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3PortMirrorAclRuleHistoryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of PortMirror acl rule related history statistics.  
+             These reflect the history data."
+    ::= { f3PortMirrorStatsObjects 4 }
+
+f3PortMirrorAclRuleHistoryEntry OBJECT-TYPE
+    SYNTAX      F3PortMirrorAclRuleHistoryEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3PortMirrorAclRuleHistoryTable.
+             Entries exist in this table for each PortMirror acl rule."
+    INDEX { neIndex, f3MirrorSessionIndex, f3PortMirrorAclRuleIndex,
+            f3PortMirrorAclRuleStatsIndex, f3PortMirrorAclRuleHistoryIndex }
+    ::= { f3PortMirrorAclRuleHistoryTable 1 }
+
+F3PortMirrorAclRuleHistoryEntry ::= SEQUENCE {
+    f3PortMirrorAclRuleHistoryIndex               Integer32,
+    f3PortMirrorAclRuleHistoryTime                DateAndTime,
+    f3PortMirrorAclRuleHistoryValid               TruthValue,
+    f3PortMirrorAclRuleHistoryAction              CmPmBinAction,
+    f3PortMirrorAclRuleHistoryRuleMatch           PerfCounter64
+}
+
+f3PortMirrorAclRuleHistoryIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this PortMirror flow point statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3PortMirrorAclRuleHistoryEntry 1 }
+
+f3PortMirrorAclRuleHistoryTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the time of history bin creation." 
+    ::= { f3PortMirrorAclRuleHistoryEntry 2 }
+
+f3PortMirrorAclRuleHistoryValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3PortMirrorAclRuleHistoryEntry 3 }
+
+f3PortMirrorAclRuleHistoryAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3PortMirrorAclRuleHistoryEntry 4 }
+
+f3PortMirrorAclRuleHistoryRuleMatch OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets matching acl rule."
+     ::= { f3PortMirrorAclRuleHistoryEntry 5 }
+
+--
+-- PortMirror acl rule Threshold Table
+--
+f3PortMirrorAclRuleThresholdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3PortMirrorAclRuleThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A table of entries that allow manageability of PortMirror acl rule Thresholds."
+    ::= { f3PortMirrorStatsObjects 5 }
+
+f3PortMirrorAclRuleThresholdEntry OBJECT-TYPE
+    SYNTAX      F3PortMirrorAclRuleThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3PortMirrorAclRuleThresholdTable."
+    INDEX { neIndex, f3MirrorSessionIndex, f3PortMirrorAclRuleIndex,
+            f3PortMirrorAclRuleStatsIndex, f3PortMirrorAclRuleThresholdIndex }
+    ::= { f3PortMirrorAclRuleThresholdTable 1 }
+
+F3PortMirrorAclRuleThresholdEntry ::= SEQUENCE {
+    f3PortMirrorAclRuleThresholdIndex       Integer32,
+    f3PortMirrorAclRuleThresholdInterval    CmPmIntervalType,
+    f3PortMirrorAclRuleThresholdVariable    VariablePointer,
+    f3PortMirrorAclRuleThresholdValueLo     Unsigned32,
+    f3PortMirrorAclRuleThresholdValueHi     Unsigned32,
+    f3PortMirrorAclRuleThresholdMonValue    Counter64
+}
+
+f3PortMirrorAclRuleThresholdIndex OBJECT-TYPE
+    SYNTAX     Integer32 (1..65535)
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "An index that uniquely identifies an entry in the
+        f3PortMirrorAclRuleThresholdTable."
+    ::= { f3PortMirrorAclRuleThresholdEntry 1 }
+
+f3PortMirrorAclRuleThresholdInterval OBJECT-TYPE
+    SYNTAX     CmPmIntervalType
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The interval over which monitored value is
+        sampled and compared with the specified threshold."
+    ::= { f3PortMirrorAclRuleThresholdEntry 2 }
+
+f3PortMirrorAclRuleThresholdVariable OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The object identifier of the particular variable to be
+        sampled."
+    ::= { f3PortMirrorAclRuleThresholdEntry 3 }
+
+f3PortMirrorAclRuleThresholdValueLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Lower 32 bits of the threshold value."
+    ::= { f3PortMirrorAclRuleThresholdEntry 4 }
+
+f3PortMirrorAclRuleThresholdValueHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Higher 32 bits of the threshold value."
+    ::= { f3PortMirrorAclRuleThresholdEntry 5 }
+
+f3PortMirrorAclRuleThresholdMonValue OBJECT-TYPE
+    SYNTAX     Counter64
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Monitored value corresponding to f3PortMirrorAclRuleThresholdVariable."
+    ::= { f3PortMirrorAclRuleThresholdEntry 6 }
+
+--
+-- PortMirror acl rule Current Statistics Table
+--
+f3PortMirrorEgressMonitorFpStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3PortMirrorEgressMonitorFpStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of PortMirror acl rule related statistics.  
+             These reflect the current data."
+    ::= { f3PortMirrorStatsObjects 6 }
+
+f3PortMirrorEgressMonitorFpStatsEntry OBJECT-TYPE
+    SYNTAX      F3PortMirrorEgressMonitorFpStatsEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3PortMirrorEgressMonitorFpStatsTable.
+             Entries exist in this table for each Acl rule."
+    INDEX { neIndex, f3PortMirrorEgressMonitorFpIndex }
+    ::= { f3PortMirrorEgressMonitorFpStatsTable 1 }
+
+F3PortMirrorEgressMonitorFpStatsEntry ::= SEQUENCE {
+    f3PortMirrorEgressMonitorFpStatsAvgBitRate          PerfCounter64,
+    f3PortMirrorEgressMonitorFpStatsBytesDequeued       PerfCounter64,
+    f3PortMirrorEgressMonitorFpStatsFrameDequeued       PerfCounter64,
+    f3PortMirrorEgressMonitorFpStatsBytesTailDrop       PerfCounter64,
+    f3PortMirrorEgressMonitorFpStatsFramesTailDrop      PerfCounter64,
+    f3PortMirrorEgressMonitorFpStatsAction              PortMirrorStatsAction
+}
+
+f3PortMirrorEgressMonitorFpStatsAvgBitRate OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The average bit rate."
+     ::= { f3PortMirrorEgressMonitorFpStatsEntry 1 }
+
+f3PortMirrorEgressMonitorFpStatsBytesDequeued OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets bytes dequeued."
+     ::= { f3PortMirrorEgressMonitorFpStatsEntry 2 }
+
+f3PortMirrorEgressMonitorFpStatsFrameDequeued OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of frames dequeued."
+     ::= { f3PortMirrorEgressMonitorFpStatsEntry 3 }
+
+f3PortMirrorEgressMonitorFpStatsBytesTailDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The bytes tail dropped."
+     ::= { f3PortMirrorEgressMonitorFpStatsEntry 4 }
+
+f3PortMirrorEgressMonitorFpStatsFramesTailDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of frames tail dropped."
+     ::= { f3PortMirrorEgressMonitorFpStatsEntry 5 }
+
+f3PortMirrorEgressMonitorFpStatsAction OBJECT-TYPE
+    SYNTAX        PortMirrorStatsAction
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "User action performed on monitor flow point Stats."
+    ::= { f3PortMirrorEgressMonitorFpStatsEntry 6 }
+
+--
+--  Mirror Filter Tables
+--
+
+f3MirrorFilterProfileTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirrorFilterProfileEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding 
+             to Mirror Filter Profile instance 
+             for configuration purposes."
+    ::= { f3PortMirrorFilterObjects 1 }
+
+f3MirrorFilterProfileEntry OBJECT-TYPE
+    SYNTAX      F3MirrorFilterProfileEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirrorFilterProfileTable."
+    INDEX { neIndex, f3MirrorFilterProfileIndex }
+    ::= { f3MirrorFilterProfileTable 1 }
+
+F3MirrorFilterProfileEntry ::= SEQUENCE {
+    f3MirrorFilterProfileIndex                Integer32,
+    f3MirrorFilterProfileName                 DisplayString,
+    f3MirrorFilterProfileDefaultAction        MirroredFramesAction,
+    f3MirrorFilterProfileStorageType          StorageType,
+    f3MirrorFilterProfileRowStatus            RowStatus
+}
+
+f3MirrorFilterProfileIndex OBJECT-TYPE
+    SYNTAX        Integer32 (1..20)
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+          this Mirror Filter Profile within Network Element."
+    ::= { f3MirrorFilterProfileEntry 1 }
+
+f3MirrorFilterProfileName OBJECT-TYPE
+    SYNTAX        DisplayString (SIZE (0..256))
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Mirror Filter Profile Name"
+    ::= { f3MirrorFilterProfileEntry 2 }
+
+f3MirrorFilterProfileDefaultAction OBJECT-TYPE
+    SYNTAX        MirroredFramesAction
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Mirror Filter Profile Action for a mirrored frame
+          that does not match any filter entry for the profile"
+    ::= { f3MirrorFilterProfileEntry 3 }
+
+f3MirrorFilterProfileStorageType OBJECT-TYPE
+    SYNTAX        StorageType
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The type of storage configured for this entry."
+    ::= { f3MirrorFilterProfileEntry 4 }
+
+f3MirrorFilterProfileRowStatus OBJECT-TYPE
+    SYNTAX        RowStatus
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The status of this row.  An entry MUST NOT exist in the 
+          active state unless all objects in the entry have an 
+          appropriate value, as described
+          in the description clause for each writable object.
+
+          The values of f3MirrorFilterProfileRowStatus supported are
+          createAndGo(4) and destroy(6).  All mandatory attributes
+          must be specified in a single SNMP SET request with
+          neRowStatus value as createAndGo(4).
+          Upon successful row creation, this object has a
+          value of active(1).
+          
+          The f3MirrorFilterProfileRowStatus object may be modified if
+          the associated instance of this object is equal to active(1)."
+    ::= { f3MirrorFilterProfileEntry 5 }
+
+f3MirrorFilterProfileEntryTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirrorFilterProfileEntryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding 
+             to Mirror Filter Profile Entry instance 
+             for configuration purposes."
+    ::= { f3PortMirrorFilterObjects 2 }
+
+f3MirrorFilterProfileEntryEntry OBJECT-TYPE
+    SYNTAX      F3MirrorFilterProfileEntryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirrorFilterProfileEntryTable."
+    INDEX { neIndex, f3MirrorFilterProfileIndex, f3MirrorFilterProfileEntryIndex }
+    ::= { f3MirrorFilterProfileEntryTable 1 }
+
+F3MirrorFilterProfileEntryEntry ::= SEQUENCE {
+    f3MirrorFilterProfileEntryIndex           Integer32,
+    f3MirrorFilterProfileEntryFilter          VariablePointer,
+    f3MirrorFilterProfileEntryPriority        Unsigned32,
+    f3MirrorFilterProfileEntryAction          MirroredFramesAction,
+    f3MirrorFilterProfileEntryStorageType     StorageType,
+    f3MirrorFilterProfileEntryRowStatus       RowStatus
+}
+
+f3MirrorFilterProfileEntryIndex OBJECT-TYPE
+    SYNTAX        Integer32 (1..7)
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+          this Mirror Filter Profile Entry 
+          within Mirror Filter Profile."
+    ::= { f3MirrorFilterProfileEntryEntry 1 }
+
+f3MirrorFilterProfileEntryFilter OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Pointer to a Mirror Filter. The pointer must be set to f3MirrorFilterName."
+    ::= { f3MirrorFilterProfileEntryEntry 2 }
+
+f3MirrorFilterProfileEntryPriority OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Execution order for this Filter Entry within the Profile"
+    ::= { f3MirrorFilterProfileEntryEntry 3 }
+
+f3MirrorFilterProfileEntryAction OBJECT-TYPE
+    SYNTAX        MirroredFramesAction
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "User action performed on this Mirror Filter Profile Entryinstance:
+          - ACCEPT: a Mirrored Frame that matches this filter entry 
+                    is transmitted on the Monitor Port
+          - DENY: a Mirrored Frame that matches this filter entry 
+                  is discarded and not transmitted on the Monitor Port"
+    ::= { f3MirrorFilterProfileEntryEntry 4 }
+
+f3MirrorFilterProfileEntryStorageType OBJECT-TYPE
+    SYNTAX        StorageType
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The type of storage configured for this entry."
+    ::= { f3MirrorFilterProfileEntryEntry 5 }
+
+f3MirrorFilterProfileEntryRowStatus OBJECT-TYPE
+    SYNTAX        RowStatus
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The status of this row.  An entry MUST NOT exist in the 
+          active state unless all objects in the entry have an 
+          appropriate value, as described
+          in the description clause for each writable object.
+
+          The values of f3MirrorFilterProfileEntryRowStatus supported are
+          createAndGo(4) and destroy(6).  All mandatory attributes
+          must be specified in a single SNMP SET request with
+          neRowStatus value as createAndGo(4).
+          Upon successful row creation, this object has a
+          value of active(1).
+          
+          The f3MirrorFilterProfileEntryRowStatus object may be modified if
+          the associated instance of this object is equal to active(1)."
+    ::= { f3MirrorFilterProfileEntryEntry 6 }
+
+f3MirrorFilterTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirrorFilterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding 
+             to Mirror Filter instance 
+             for configuration purposes."
+    ::= { f3PortMirrorFilterObjects 3 }
+
+f3MirrorFilterEntry OBJECT-TYPE
+    SYNTAX      F3MirrorFilterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirrorFilterTable."
+    INDEX { neIndex, f3MirrorFilterIndex }
+    ::= { f3MirrorFilterTable 1 }
+
+F3MirrorFilterEntry ::= SEQUENCE {
+    f3MirrorFilterIndex                       Integer32,
+    f3MirrorFilterName                        DisplayString,
+    f3MirrorFilterL2OuterVIDCtrlEnabled       TruthValue,
+    f3MirrorFilterL2OuterVIDLow               VlanId,
+    f3MirrorFilterL2OuterVIDHigh              VlanId,
+    f3MirrorFilterL2OuterPrioCtrlEnabled      TruthValue,
+    f3MirrorFilterL2OuterPrioLow              Integer32,
+    f3MirrorFilterL2OuterPrioHigh             Integer32,
+    f3MirrorFilterL3IPv4DstAddrCtrlEnabled    TruthValue,
+    f3MirrorFilterL3IPv4DstAddr               IpAddress,
+    f3MirrorFilterL3IPv4DstAddrMask           IpAddress,
+    f3MirrorFilterL3IPv4SrcAddrCtrlEnabled    TruthValue,
+    f3MirrorFilterL3IPv4SrcAddr               IpAddress,
+    f3MirrorFilterL3IPv4SrcAddrMask           IpAddress,
+    f3MirrorFilterStorageType                 StorageType,
+    f3MirrorFilterRowStatus                   RowStatus
+}
+
+f3MirrorFilterIndex OBJECT-TYPE
+    SYNTAX        Integer32 (1..100)
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+          this Mirror Filter within Network Element."
+    ::= { f3MirrorFilterEntry 1 }
+
+f3MirrorFilterName OBJECT-TYPE
+    SYNTAX        DisplayString (SIZE (0..256))
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Mirror Filter Name"
+    ::= { f3MirrorFilterEntry 2 }
+
+f3MirrorFilterL2OuterVIDCtrlEnabled OBJECT-TYPE
+    SYNTAX        TruthValue
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Object used to determine if l2FilterOuterVIDLow/High 
+          values will be applied as frame match criteria"
+    ::= { f3MirrorFilterEntry 3 }
+
+f3MirrorFilterL2OuterVIDLow OBJECT-TYPE
+    SYNTAX        VlanId
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A Outer tag VID value to be applied as a frame match 
+          criteria to the Outer Tag of the frame when 
+          l2FilterOuterVIDControl is ENABLED."
+    ::= { f3MirrorFilterEntry 4 }
+
+f3MirrorFilterL2OuterVIDHigh OBJECT-TYPE
+    SYNTAX        VlanId
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A Outer tag VID value to be applied as a frame match 
+          criteria to the Outer Tag of the frame when 
+          l2FilterOuterVIDControl is ENABLED."
+    ::= { f3MirrorFilterEntry 5 }
+
+f3MirrorFilterL2OuterPrioCtrlEnabled OBJECT-TYPE
+    SYNTAX        TruthValue
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Object used to determine if l2FilterOuterPrioLow/High 
+          values will be applied as frame match criteria"
+    ::= { f3MirrorFilterEntry 6 }
+
+f3MirrorFilterL2OuterPrioLow OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A Outer tag Prio value to be applied as a frame match 
+          criteria to the Outer Tag of the frame when 
+          l2FilterOuterPrioControl is ENABLED."
+    ::= { f3MirrorFilterEntry 7 }
+
+f3MirrorFilterL2OuterPrioHigh OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A Outer tag Prio value to be applied as a frame match 
+          criteria to the Outer Tag of the frame when 
+          l2FilterOuterPrioControl is ENABLED."
+    ::= { f3MirrorFilterEntry 8 }
+
+f3MirrorFilterL3IPv4DstAddrCtrlEnabled OBJECT-TYPE
+    SYNTAX        TruthValue
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Object used to determine if l3FilterIPv4DstAddr/DstAddrMask 
+          values will be applied as frame match criteria"
+    ::= { f3MirrorFilterEntry 9 }
+
+f3MirrorFilterL3IPv4DstAddr OBJECT-TYPE
+    SYNTAX        IpAddress
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A IPv4 Address value to be applied as a frame match criteria 
+          to the IPv4 Destination Address of the frame when 
+          l3FilterIPv4DstAddrControl is ENABLED."
+    ::= { f3MirrorFilterEntry 10 }
+
+f3MirrorFilterL3IPv4DstAddrMask OBJECT-TYPE
+    SYNTAX        IpAddress
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A IPv4 Address Mask value to be applied as a frame match criteria 
+          to the IPv4 Destination Address of the frame when 
+          l3FilterIPv4DstAddrControl is ENABLED."
+    ::= { f3MirrorFilterEntry 11 }
+
+f3MirrorFilterL3IPv4SrcAddrCtrlEnabled OBJECT-TYPE
+    SYNTAX        TruthValue
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Object used to determine if l3FilterIPv4SrcAddr/SrcAddrMask 
+          values will be applied as frame match criteria"
+    ::= { f3MirrorFilterEntry 12 }
+
+f3MirrorFilterL3IPv4SrcAddr OBJECT-TYPE
+    SYNTAX        IpAddress
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A IPv4 Address value to be applied as a frame match criteria 
+          to the IPv4 Source Address of the frame when 
+          l3FilterIPv4SrcAddrControl is ENABLED."
+    ::= { f3MirrorFilterEntry 13 }
+
+f3MirrorFilterL3IPv4SrcAddrMask OBJECT-TYPE
+    SYNTAX        IpAddress
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "A IPv4 Address Mask value to be applied as a frame match criteria 
+          to the IPv4 Source Address of the frame when 
+          l3FilterIPv4SrcAddrControl is ENABLED."
+    ::= { f3MirrorFilterEntry 14 }
+
+f3MirrorFilterStorageType OBJECT-TYPE
+    SYNTAX        StorageType
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The type of storage configured for this entry."
+    ::= { f3MirrorFilterEntry 15 }
+
+f3MirrorFilterRowStatus OBJECT-TYPE
+    SYNTAX        RowStatus
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "The status of this row.  An entry MUST NOT exist in the 
+          active state unless all objects in the entry have an 
+          appropriate value, as described
+          in the description clause for each writable object.
+
+          The values of f3MirrorFilterRowStatus supported are
+          createAndGo(4) and destroy(6).  All mandatory attributes
+          must be specified in a single SNMP SET request with
+          neRowStatus value as createAndGo(4).
+          Upon successful row creation, this object has a
+          value of active(1).
+          
+          The f3MirrorFilterRowStatus object may be modified if
+          the associated instance of this object is equal to active(1)."
+    ::= { f3MirrorFilterEntry 16 }
+
+--
+-- Conformance
+--
+f3PortMirrorCompliances OBJECT IDENTIFIER ::= {f3PortMirrorConformance 1}
+f3PortMirrorGroups    OBJECT IDENTIFIER ::= {f3PortMirrorConformance 2}
+
+f3PortMirrorCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-PORTMIRROR-MIB compilance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3MirrorSessionGroup, f3PortMirrorAccPortExtGroup,
+              f3MonitorPortStatsGroup, f3PortMirrorFilterGroup,
+              f3MirrorSessionStatsGroup
+        }
+    ::= { f3PortMirrorCompliances 1 }
+
+f3MirrorSessionGroup OBJECT-GROUP
+    OBJECTS {
+       f3MirrorSessionIndex,
+       f3MirrorSessionSourcePort,
+       f3MirrorSessionMonitorPort,
+       f3MirrorSessionSourcePortDir,
+       f3MirrorSessionTruncationCtrl,
+       f3MirrorSessionTruncationLength,
+       f3MirrorSessionTimestampControl,
+       f3MirrorSessionStorageType,
+       f3MirrorSessionRowStatus,
+       f3MirrorSessionMirrRsrcPort,
+       f3MirrorSessionFilterProfile,
+       f3MirrorSessionAclMissAction
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the Port Mirror Session."
+    ::= { f3PortMirrorGroups 1 }
+
+f3PortMirrorAccPortExtGroup OBJECT-GROUP
+    OBJECTS {
+       f3PortMirrorAccPortExtMonitorEnabled,
+       f3PortMirrorAccPortExtBufferSize,
+       f3PortMirrorAccPortExtMirrRsrcEnabled
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the Access Port
+              attributes related with Port Mirror feature."
+    ::= { f3PortMirrorGroups 2 }
+
+f3MonitorPortStatsGroup OBJECT-GROUP
+    OBJECTS {
+       f3MonitorPortStatsIndex,
+       f3MonitorPortStatsTailDropped
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of Monitor Port statistic objects."
+    ::= { f3PortMirrorGroups 3 }
+
+f3MirrorSessionStatsGroup OBJECT-GROUP
+    OBJECTS {
+       f3MirrorSessionStatsIndex,
+       f3MirrorSessionStatsMirrFilterFrameDiscard,
+       f3MirrorSessionStatsAction,
+       f3MirrorSessionStatsInsufficientBwFrameDiscard
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of Mirror Session statistic objects."
+    ::= { f3PortMirrorGroups 4 }
+
+f3PortMirrorFilterGroup OBJECT-GROUP
+    OBJECTS {
+       f3MirrorFilterProfileIndex,
+       f3MirrorFilterProfileName,
+       f3MirrorFilterProfileDefaultAction,
+       f3MirrorFilterProfileStorageType,
+       f3MirrorFilterProfileRowStatus,
+       f3MirrorFilterProfileEntryIndex,
+       f3MirrorFilterProfileEntryFilter,
+       f3MirrorFilterProfileEntryPriority,
+       f3MirrorFilterProfileEntryAction,
+       f3MirrorFilterProfileEntryStorageType,
+       f3MirrorFilterProfileEntryRowStatus,
+       f3MirrorFilterIndex,
+       f3MirrorFilterName,
+       f3MirrorFilterL2OuterVIDCtrlEnabled,
+       f3MirrorFilterL2OuterVIDLow,
+       f3MirrorFilterL2OuterVIDHigh,
+       f3MirrorFilterL2OuterPrioCtrlEnabled,
+       f3MirrorFilterL2OuterPrioLow,
+       f3MirrorFilterL2OuterPrioHigh,
+       f3MirrorFilterL3IPv4DstAddrCtrlEnabled,
+       f3MirrorFilterL3IPv4DstAddr,
+       f3MirrorFilterL3IPv4DstAddrMask,
+       f3MirrorFilterL3IPv4SrcAddrCtrlEnabled,
+       f3MirrorFilterL3IPv4SrcAddr,
+       f3MirrorFilterL3IPv4SrcAddrMask,
+       f3MirrorFilterStorageType,
+       f3MirrorFilterRowStatus
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage 
+              the Port Mirror Session Filter functionality."
+    ::= { f3PortMirrorGroups 5 }
+
+f3PortMirrorEgressMonitorFpGroup OBJECT-GROUP
+    OBJECTS {
+    f3PortMirrorEgressMonitorFpIndex,
+    f3PortMirrorEgressMonitorFpName,
+    f3PortMirrorEgressMonitorFpAssoInterface,
+    f3PortMirrorEgressMonitorFpStagControl,
+    f3PortMirrorEgressMonitorFpStagVlanId,
+    f3PortMirrorEgressMonitorFpStagVlanPri,
+    f3PortMirrorEgressMonitorFpCtagControl,
+    f3PortMirrorEgressMonitorFpCtagVlanId,
+    f3PortMirrorEgressMonitorFpCtagVlanPri,
+    f3PortMirrorEgressMonitorFpCos,
+    f3PortMirrorEgressMonitorFpCirHi,
+    f3PortMirrorEgressMonitorFpCirLo,
+    f3PortMirrorEgressMonitorFpEirHi,
+    f3PortMirrorEgressMonitorFpEirLo,
+    f3PortMirrorEgressMonitorFpBufferSize,
+    f3PortMirrorEgressMonitorFpStorageType,
+    f3PortMirrorEgressMonitorFpRowStatus,
+    f3PortMirrorEgressMonitorFpEncapEntity,
+    f3PortMirrorEgressMonitorFpStatsAvgBitRate,
+    f3PortMirrorEgressMonitorFpStatsBytesDequeued,
+    f3PortMirrorEgressMonitorFpStatsFrameDequeued,
+    f3PortMirrorEgressMonitorFpStatsBytesTailDrop,
+    f3PortMirrorEgressMonitorFpStatsFramesTailDrop,
+    f3PortMirrorEgressMonitorFpStatsAction
+
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage 
+              the Port Mirror Session egress monitor flow point functionality."
+    ::= { f3PortMirrorGroups 6 }
+
+f3PortMirrorAclRuleGroup OBJECT-GROUP
+    OBJECTS {
+    f3PortMirrorAclRuleIndex,
+    f3PortMirrorAclRuleAlias,
+    f3PortMirrorAclRuleSrcIpv4AddressControl,
+    f3PortMirrorAclRuleDynamicSrcIpControl,
+    f3PortMirrorAclRuleSrcIpv4AddressLowLimit,
+    f3PortMirrorAclRuleDstIpv4AddressControl,
+    f3PortMirrorAclRuleDstIpv4AddressLowLimit,
+    f3PortMirrorAclRuleIpv4PriorityControl,
+    f3PortMirrorAclRuleIpv4PriorityLowLimit,
+    f3PortMirrorAclRuleProtocolControl,
+    f3PortMirrorAclRuleProtocolNumber,
+    f3PortMirrorAclRuleSrcPortControl,
+    f3PortMirrorAclRuleSrcPortLowLimit,
+    f3PortMirrorAclRuleSrcPortHighLimit,
+    f3PortMirrorAclRuleDstPortControl,
+    f3PortMirrorAclRuleDstPortLowLimit,
+    f3PortMirrorAclRuleDstPortHighLimit,
+    f3PortMirrorAclRulePriority,
+    f3PortMirrorAclRuleCOS,
+    f3PortMirrorAclRuleOperation,
+    f3PortMirrorAclRuleSummary,
+    f3PortMirrorAclRuleCosOverrideControl,
+    f3PortMirrorAclRuleSrcMacAddressControl,
+    f3PortMirrorAclRuleDynamicSrcMacAddressControl,
+    f3PortMirrorAclRuleSrcMacAddress,
+    f3PortMirrorAclRuleSrcMacAddressMask,
+    f3PortMirrorAclRuleDstMacAddressControl,
+    f3PortMirrorAclRuleDstMacAddress,
+    f3PortMirrorAclRuleDstMacAddressMask,
+    f3PortMirrorAclRuleOuterVlanVIDControl,
+    f3PortMirrorAclRuleOuterVlanVIDLowLimit,
+    f3PortMirrorAclRuleOuterVlanVIDHighLimit,
+    f3PortMirrorAclRuleInnerVlanVIDControl,
+    f3PortMirrorAclRuleInnerVlanVIDLowLimit,
+    f3PortMirrorAclRuleInnerVlanVIDHighLimit,
+    f3PortMirrorAclRuleOuterVlanPcpControl,
+    f3PortMirrorAclRuleOuterVlanPcpLowLimit,
+    f3PortMirrorAclRuleOuterVlanPcpHighLimit,
+    f3PortMirrorAclRuleInnerVlanPcpControl,
+    f3PortMirrorAclRuleInnerVlanPcpLowLimit,
+    f3PortMirrorAclRuleInnerVlanPcpHighLimit,
+    f3PortMirrorAclRuleOuterVlanDeiControl,
+    f3PortMirrorAclRuleOuterVlanDei,
+    f3PortMirrorAclRuleEtherTypeControl,
+    f3PortMirrorAclRuleEtherType,
+    f3PortMirrorAclRuleTcpFlagsControl,
+    f3PortMirrorAclRuleTcpFlags,
+    f3PortMirrorAclRuleSrcIpv4AddressHighLimit,
+    f3PortMirrorAclRuleDstIpv4AddressHighLimit,
+    f3PortMirrorAclRuleIpv4PriorityHighLimit,
+    f3PortMirrorAclRuleStorageType,
+    f3PortMirrorAclRuleRowStatus,
+    f3PortMirrorAclRuleAdminState,
+    f3PortMirrorAclRuleActive,
+    f3PortMirrorAclRuleSrcIpV6AddressControl,
+    f3PortMirrorAclRuleSrcIpV6Address,
+    f3PortMirrorAclRuleSrcIpV6AddressPrefixLen,
+    f3PortMirrorAclRuleDstIpV6AddressControl,
+    f3PortMirrorAclRuleDstIpV6Address,
+    f3PortMirrorAclRuleDstIpV6AddressPrefixLen,
+    f3PortMirrorAclRuleIpV6FlowLabelControl,
+    f3PortMirrorAclRuleIpV6FlowLabel,
+    
+    f3PortMirrorAclRuleStatsIndex,
+    f3PortMirrorAclRuleStatsIntervalType,
+    f3PortMirrorAclRuleStatsValid,
+    f3PortMirrorAclRuleStatsAction,
+    f3PortMirrorAclRuleStatsRuleMatch,
+    f3PortMirrorAclRuleHistoryIndex,
+    f3PortMirrorAclRuleHistoryTime,
+    f3PortMirrorAclRuleHistoryValid,
+    f3PortMirrorAclRuleHistoryAction,
+    f3PortMirrorAclRuleHistoryRuleMatch,
+    f3PortMirrorAclRuleThresholdIndex,
+    f3PortMirrorAclRuleThresholdInterval,
+    f3PortMirrorAclRuleThresholdVariable,
+    f3PortMirrorAclRuleThresholdValueLo,
+    f3PortMirrorAclRuleThresholdValueHi,
+    f3PortMirrorAclRuleThresholdMonValue
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage 
+              the Port Mirror Session acl rule functionality."
+    ::= { f3PortMirrorGroups 7 }
+
+--
+-- Notifications, i.e., traps.
+--
+
+f3PortMirrorAclRuleThresholdCrossingAlert NOTIFICATION-TYPE
+       OBJECTS {
+                  f3PortMirrorAclRuleThresholdIndex,
+                  f3PortMirrorAclRuleThresholdVariable,
+                  f3PortMirrorAclRuleThresholdValueLo,
+                  f3PortMirrorAclRuleThresholdValueHi,
+                  f3PortMirrorAclRuleThresholdMonValue
+               }
+
+    STATUS  current
+    DESCRIPTION
+            "This trap is sent each time a threshold on a PM condition
+             on Port Mirror Acl Rule is crossed."
+  ::= { f3PortMirrorNotifications 1 }
+
+END

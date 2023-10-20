@@ -1,0 +1,1346 @@
+F3-SR-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32, IpAddress
+             FROM SNMPv2-SMI
+    TruthValue, RowStatus, StorageType, DisplayString,
+    MacAddress, VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    neIndex
+             FROM CM-ENTITY-MIB
+    fsp150cm
+             FROM  ADVA-MIB 
+    AdminState, OperationalState, SecondaryState
+             FROM  CM-COMMON-MIB
+    f3VrfEntry, f3VrfIndex, SrSidType, TrafficIpRouteStatus, TrafficIpRouteOriginType
+             FROM F3-L3-MIB
+    IpEntryType
+             FROM  CM-IP-MIB;
+
+f3SrMIB MODULE-IDENTITY
+    LAST-UPDATED        "201907250000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the Segment Routing MIB definitions 
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "201907250000Z"
+    DESCRIPTION
+        "MIB version ready for release FSP150CC 11.1CC." 
+
+    ::= {fsp150cm 53}    
+
+--
+-- Textual Conventions
+--
+SidAlgorithm ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Algorithm to be used for SID"
+    SYNTAX       INTEGER {
+                   spf (1)
+                   --strictSpf (2)
+                 }
+
+SrTransportType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Transport used by Segment Routing"
+    SYNTAX       INTEGER {
+                   mpls (1)
+                 }
+SrDestinationType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Destination used by Segment Routing"
+    SYNTAX       INTEGER {
+                   none (0),
+                   ipPrefix(1),
+                   sidList(2),
+                   srPolicy (3)
+                 }
+
+
+SrAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "SR Action:
+            noAction              - No Action
+            srPingAction          - Initiates Ping Request
+            srTracerouteAction    - Initiates Traceroute Request
+            srSidListRetrieveAction - Initiates SID List Retrieve
+            srtSrRouteRetrieveAction - Initiates SR Route Retrieve
+            "
+    SYNTAX       INTEGER {
+                   noAction (1),
+                   srPingAction (2),
+                   srTracerouteAction (3),
+                   srSidListRetrieveAction (4),
+                   srtSrRouteRetrieveAction (5)
+                 }
+
+LastHopBehavior ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Last Hop Behavior"
+    SYNTAX       INTEGER {
+                   php (1),
+                   noPhp (2),
+                   explicitNull (3)
+                 }
+
+ProtocolType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Protocol Type"
+    SYNTAX       INTEGER {
+                   ospf (1),
+                   bgp (2),
+                   isis (3)
+                 }
+
+BindingType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "SR Binding Type"
+    SYNTAX       INTEGER {
+                   prefixSid (1),
+                   bindingTlv (2)
+                 }
+
+SidScope ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "SID Scopre"
+    SYNTAX       INTEGER {
+                   global (1),
+                   local (2)
+                 }
+
+-- 
+-- OID definitions
+-- 
+f3SrObjects      OBJECT IDENTIFIER ::= {f3SrMIB 1}
+f3SrConformance    OBJECT IDENTIFIER ::= {f3SrMIB 2}
+
+--
+-- Segment Routing
+--
+
+f3SrTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SrEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Segment Routing."
+
+   ::= { f3SrObjects 1 }
+
+f3SrEntry OBJECT-TYPE
+    SYNTAX      F3SrEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SrTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex }
+
+   ::= { f3SrTable 1 }
+
+F3SrEntry ::= SEQUENCE {
+    f3SrIndex                             Unsigned32,
+    f3SrMaxSidDepth                       Unsigned32,
+    f3SrTransportType                     SrTransportType,
+    f3SrPingResult                        DisplayString,
+    f3SrTraceRouteResult                  DisplayString,
+    f3SrSidAlgorithm                      DisplayString,
+    f3SrActionDestinationType             SrDestinationType,
+    f3SrActionIpPrefix                    DisplayString,
+    f3SrActionSidList                     DisplayString,
+    f3SrActionSrPolicy                    DisplayString,
+    f3SrActionSrcInterface                DisplayString,
+    f3SrActionNextHop                     DisplayString,
+    f3SrActionOutInterface                DisplayString,
+    f3SrActionRepeatCount                 Unsigned32,
+    f3SrActionInterval                    Unsigned32,
+    f3SrActionPacketSize                  Unsigned32,
+    f3SrActionTimeout                     Unsigned32,
+    f3SrActionTtl                         Unsigned32,
+    f3SrActionExpBits                     Unsigned32,
+    f3SrAction                            SrAction,
+    f3SrRowStatus                         RowStatus
+}
+
+f3SrIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The ID of Segment Routing instance."
+   ::= { f3SrEntry 1 }
+
+f3SrMaxSidDepth OBJECT-TYPE
+    SYNTAX  Unsigned32
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Indicates the maximum number of SIDs that can be added 
+         for segment routed traffic originated on the device."
+    ::= { f3SrEntry 2 }
+
+f3SrTransportType OBJECT-TYPE
+    SYNTAX      SrTransportType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute is used to describe transport type."
+   ::= { f3SrEntry 3 }
+
+f3SrPingResult OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "LSP Ping Result."
+    ::= { f3SrEntry 4 }
+
+f3SrTraceRouteResult OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "LSP Traceroute Result."
+    ::= { f3SrEntry 5 }
+
+f3SrSidAlgorithm OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "SR list of SID Algorithms."
+    ::= { f3SrEntry 6 }
+
+f3SrActionDestinationType OBJECT-TYPE
+    SYNTAX      SrDestinationType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute is used to describe destination type."
+   ::= { f3SrEntry 7 }
+
+f3SrActionIpPrefix OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "IP Prefix for Ping/Traceroute."
+    ::= { f3SrEntry 8 }
+
+f3SrActionSidList OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "SID List for Ping/Traceroute"
+    ::= { f3SrEntry 9 }
+
+f3SrActionSrPolicy OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "SR Policy for Ping/Traceroute"
+    ::= { f3SrEntry 10 }
+
+f3SrActionSrcInterface OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Source Interface for Ping/Traceroute."
+    ::= { f3SrEntry 11 }
+
+f3SrActionNextHop OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Next Hop for Ping/Traceroute."
+    ::= { f3SrEntry 12 }
+
+f3SrActionOutInterface OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Outgoing Interface for Ping/Traceroute."
+    ::= { f3SrEntry 13 }
+
+f3SrActionRepeatCount OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Repeat Count for Ping."
+    ::= { f3SrEntry 14 }
+
+f3SrActionInterval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Interval for Ping."
+    ::= { f3SrEntry 15 }
+
+f3SrActionPacketSize OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Packet Size Ping/Traceroute."
+    ::= { f3SrEntry 16 }
+
+f3SrActionTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Timeout for Ping/Traceroute."
+    ::= { f3SrEntry 17 }
+
+f3SrActionTtl OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "TTL for Ping/Traceroute."
+    ::= { f3SrEntry 18 }
+
+f3SrActionExpBits OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Exp Bits for Ping/Traceroute."
+    ::= { f3SrEntry 19 }
+
+f3SrAction OBJECT-TYPE
+    SYNTAX      SrAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Perform action of Ping/Traceroute."
+    ::= { f3SrEntry 20 }
+
+f3SrRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row. Read SNMPv2-TC (RFC1903) for an
+         explanation of the possible values this object can take."
+   ::= { f3SrEntry 21 }
+
+--
+-- SRGB
+--
+
+f3SrgbTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SrgbEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Segment Routing Global Block."
+
+   ::= { f3SrObjects 2 }
+
+f3SrgbEntry OBJECT-TYPE
+    SYNTAX      F3SrgbEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SrgbTable."
+    	INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3SrgbLowerBound,
+              f3SrgbUpperBound }
+
+   ::= { f3SrgbTable 1 }
+
+F3SrgbEntry ::= SEQUENCE {
+    f3SrgbLowerBound                      Unsigned32,
+    f3SrgbUpperBound                      Unsigned32,
+    f3SrgbRowStatus                       RowStatus
+}
+
+f3SrgbLowerBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Lower value in the label range."
+   ::= { f3SrgbEntry 1 }
+
+f3SrgbUpperBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Upper value in the label range."
+   ::= { f3SrgbEntry 2 }
+
+f3SrgbRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row. Read SNMPv2-TC (RFC1903) for an
+         explanation of the possible values this object can take."
+   ::= { f3SrgbEntry 3 }
+
+--
+-- SRLB
+--
+
+f3SrlbTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SrlbEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Segment Routing Local Block."
+
+   ::= { f3SrObjects 3 }
+
+f3SrlbEntry OBJECT-TYPE
+    SYNTAX      F3SrlbEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SrlbTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3SrlbLowerBound,
+              f3SrlbUpperBound }
+
+   ::= { f3SrlbTable 1 }
+
+F3SrlbEntry ::= SEQUENCE {
+    f3SrlbLowerBound                      Unsigned32,
+    f3SrlbUpperBound                      Unsigned32,
+    f3SrlbRowStatus                       RowStatus
+}
+
+f3SrlbLowerBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Lower value in the label range."
+   ::= { f3SrlbEntry 1 }
+
+f3SrlbUpperBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Upper value in the label range."
+   ::= { f3SrlbEntry 2 }
+
+f3SrlbRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row. Read SNMPv2-TC (RFC1903) for an
+         explanation of the possible values this object can take."
+   ::= { f3SrlbEntry 3 }
+
+--
+-- Connected Prefix SID
+--
+
+f3ConnPrefixSidTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3ConnPrefixSidEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Node SID Table."
+
+   ::= { f3SrObjects 4 }
+
+f3ConnPrefixSidEntry OBJECT-TYPE
+    SYNTAX      F3ConnPrefixSidEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3ConnPrefixSidTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3ConnPrefixSidPrefix,
+              f3ConnPrefixSidAlgorithm }
+
+   ::= { f3ConnPrefixSidTable 1 }
+
+F3ConnPrefixSidEntry ::= SEQUENCE {
+    f3ConnPrefixSidPrefix                 DisplayString,
+    f3ConnPrefixSidAlgorithm              SidAlgorithm,
+    f3ConnPrefixSidType                   SrSidType,
+    f3ConnPrefixSidStartSid               Unsigned32,
+    f3ConnPrefixSidRange                  Unsigned32,
+    f3ConnPrefixLastHopBehavior           LastHopBehavior,
+    f3ConnPrefixSidRowStatus              RowStatus
+}
+
+f3ConnPrefixSidPrefix OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Prefix SID."
+   ::= { f3ConnPrefixSidEntry 1 }
+
+f3ConnPrefixSidAlgorithm OBJECT-TYPE
+    SYNTAX      SidAlgorithm
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "SID Algorithm."
+   ::= { f3ConnPrefixSidEntry 2 }
+
+f3ConnPrefixSidType OBJECT-TYPE
+    SYNTAX      SrSidType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute defines how SID value must be interpreted."
+   ::= { f3ConnPrefixSidEntry 3 }
+
+f3ConnPrefixSidStartSid OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Value associated with prefix. The value must be
+         interpreted in the context of value-type."
+   ::= { f3ConnPrefixSidEntry 4 }
+
+f3ConnPrefixSidRange OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Indicates how many SIDs can be allocated."
+   ::= { f3ConnPrefixSidEntry 5 }
+
+f3ConnPrefixLastHopBehavior OBJECT-TYPE
+    SYNTAX      LastHopBehavior
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Indicates last hop behavior."
+   ::= { f3ConnPrefixSidEntry 6 }
+
+f3ConnPrefixSidRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row. Read SNMPv2-TC (RFC1903) for an
+         explanation of the possible values this object can take."
+   ::= { f3ConnPrefixSidEntry 7 }
+
+--
+-- Local Prefix SID
+--
+
+f3LocalPrefixSidTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LocalPrefixSidEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Local Prefix SID Table."
+
+   ::= { f3SrObjects 5 }
+
+f3LocalPrefixSidEntry OBJECT-TYPE
+    SYNTAX      F3LocalPrefixSidEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3LocalPrefixSidTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3LocalPrefixSidSid }
+
+   ::= { f3LocalPrefixSidTable 1 }
+
+F3LocalPrefixSidEntry ::= SEQUENCE {
+    f3LocalPrefixSidPrefix                 DisplayString,
+    f3LocalPrefixSidAlgorithm              SidAlgorithm,
+    f3LocalPrefixSidType                   SrSidType,
+    f3LocalPrefixSidSid                    Unsigned32,
+    f3LocalPrefixSidIsProtected            TruthValue,
+    f3LocalPrefixSidIpInterface            VariablePointer,
+    f3LocalPrefixSidRowStatus              RowStatus
+}
+
+f3LocalPrefixSidPrefix OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Prefix SID."
+   ::= { f3LocalPrefixSidEntry 1 }
+
+f3LocalPrefixSidAlgorithm OBJECT-TYPE
+    SYNTAX      SidAlgorithm
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "SID Algorithm."
+   ::= { f3LocalPrefixSidEntry 2 }
+
+f3LocalPrefixSidType OBJECT-TYPE
+    SYNTAX      SrSidType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute defines how SID value must be interpreted."
+   ::= { f3LocalPrefixSidEntry 3 }
+
+f3LocalPrefixSidSid OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Value associated with prefix. The value must be
+         interpreted in the context of value-type."
+   ::= { f3LocalPrefixSidEntry 4 }
+
+f3LocalPrefixSidIsProtected OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "Indicates how many SIDs can be allocated."
+   ::= { f3LocalPrefixSidEntry 5 }
+
+f3LocalPrefixSidIpInterface OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "EID of Traffic IP Interface this corresponds to."
+   ::= { f3LocalPrefixSidEntry 6 }
+
+f3LocalPrefixSidRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row. Read SNMPv2-TC (RFC1903) for an
+         explanation of the possible values this object can take."
+   ::= { f3LocalPrefixSidEntry 7 }
+
+--
+-- SR Policy
+--
+
+f3SrPolicyTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SrPolicyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "SR Policy Table."
+
+   ::= { f3SrObjects 6 }
+
+f3SrPolicyEntry OBJECT-TYPE
+    SYNTAX      F3SrPolicyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SrPolicyTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3SrPolicyName }
+
+   ::= { f3SrPolicyTable 1 }
+
+F3SrPolicyEntry ::= SEQUENCE {
+    f3SrPolicyName                        DisplayString,
+    f3SrPolicySidList                     DisplayString,
+    f3SrPolicyRowStatus                   RowStatus
+
+}
+
+f3SrPolicyName OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..64)) 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "SR Policy name. This should be unique."
+   ::= { f3SrPolicyEntry 1 }
+
+f3SrPolicySidList OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "SR Policy SID List."
+   ::= { f3SrPolicyEntry 2 }
+
+f3SrPolicyRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row. Read SNMPv2-TC (RFC1903) for an
+         explanation of the possible values this object can take."
+   ::= { f3SrPolicyEntry 3 }
+
+
+--
+-- SID List
+--
+
+f3SrSidListTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SrSidListEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "List of Prefix and SID associations.
+         Must set SrAction as srSidListRetrieveAction(4) before get data from this table."
+
+   ::= { f3SrObjects 7 }
+
+f3SrSidListEntry OBJECT-TYPE
+    SYNTAX      F3SrSidListEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SrSidListTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3SrSidListTarget,
+              f3SrSidListSid,
+              f3SrSidListSource,
+              f3SrSidListSourceProtocol,
+              f3SrSidListBindingType }
+
+   ::= { f3SrSidListTable 1 }
+
+F3SrSidListEntry ::= SEQUENCE {
+    f3SrSidListTarget                     DisplayString,
+    f3SrSidListSid                        Unsigned32,
+    f3SrSidListSource                     IpAddress,
+    f3SrSidListSourceProtocol             ProtocolType,
+    f3SrSidListBindingType                BindingType,
+    f3SrSidListUsed                       TruthValue,
+    f3SrSidListAlgorithm                  SidAlgorithm,
+    f3SrSidListSidScope                   SidScope
+}
+
+f3SrSidListTarget OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Defines the target of the binding."
+   ::= { f3SrSidListEntry 1 }
+
+f3SrSidListSid OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Index associated with the prefix."
+   ::= { f3SrSidListEntry 2 }
+
+f3SrSidListSource OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "IP address of the router that owns the binding."
+   ::= { f3SrSidListEntry 3 }
+
+f3SrSidListSourceProtocol OBJECT-TYPE
+    SYNTAX      ProtocolType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Routing protocol that owns the binding."
+   ::= { f3SrSidListEntry 4 }
+
+f3SrSidListBindingType OBJECT-TYPE
+    SYNTAX      BindingType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Type of binding."
+   ::= { f3SrSidListEntry 5 }
+
+f3SrSidListUsed OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Indicates if the binding is install in the
+         forwarding plane."
+   ::= { f3SrSidListEntry 6 }
+
+f3SrSidListAlgorithm OBJECT-TYPE
+    SYNTAX      SidAlgorithm
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Algorithm to be used for the prefix SID."
+   ::= { f3SrSidListEntry 7 }
+
+f3SrSidListSidScope OBJECT-TYPE
+    SYNTAX      SidScope
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "SID scope."
+   ::= { f3SrSidListEntry 8 }
+
+--
+-- Label Blocks
+--
+
+f3LabelBlockTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LabelBlockEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "List of label blocks currently in use."
+
+   ::= { f3SrObjects 8 }
+
+f3LabelBlockEntry OBJECT-TYPE
+    SYNTAX      F3LabelBlockEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3LabelBlockTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3LabelBlockLowerBound,
+              f3LabelBlockUpperBound }
+
+   ::= { f3LabelBlockTable 1 }
+
+F3LabelBlockEntry ::= SEQUENCE {
+    f3LabelBlockLowerBound                Unsigned32,
+    f3LabelBlockUpperBound                Unsigned32,
+    f3LabelBlockSize                      Unsigned32,
+    f3LabelBlockUsed                      Unsigned32,
+    f3LabelBlockScope                     SidScope
+}
+
+f3LabelBlockLowerBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Lower bound of the label block."
+   ::= { f3LabelBlockEntry 1 }
+
+f3LabelBlockUpperBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Upper bound of the label block."
+   ::= { f3LabelBlockEntry 2 }
+
+f3LabelBlockSize OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number of indexes in the block."
+   ::= { f3LabelBlockEntry 3 }
+
+f3LabelBlockUsed OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Number of indexes in use in the block."
+   ::= { f3LabelBlockEntry 4 }
+
+f3LabelBlockScope OBJECT-TYPE
+    SYNTAX      SidScope
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Scope of this label block."
+   ::= { f3LabelBlockEntry 5 }
+
+--
+-- SR Routing Table
+--
+
+f3SrRoutingTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SrRoutingTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "List of static and dynamic routes.
+         Must set SrAction as srSidListRetrieveAction(4) before get data from this table."
+
+   ::= { f3SrObjects 9 }
+
+f3SrRoutingTableEntry OBJECT-TYPE
+    SYNTAX      F3SrRoutingTableEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SrRoutingTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3SrRoutingTablePrefix,
+              f3SrRoutingTableLabelIn,
+              f3SrRoutingTableOutInterface,
+              f3SrRoutingTableNextHop }
+
+   ::= { f3SrRoutingTable 1 }
+
+F3SrRoutingTableEntry ::= SEQUENCE {
+    f3SrRoutingTablePrefix                DisplayString,
+    f3SrRoutingTableLabelIn               Unsigned32,
+    f3SrRoutingTableOutInterface          DisplayString,
+    f3SrRoutingTableNextHop               IpAddress,
+    f3SrRoutingTableLabelAction           DisplayString,
+    f3SrRoutingTableLabels                DisplayString,
+    f3SrRoutingTableRouteStatus           TrafficIpRouteStatus,
+    f3SrRoutingTableRouteOrigin           TrafficIpRouteOriginType,
+    f3SrRoutingTableRouteType             IpEntryType
+}
+
+f3SrRoutingTablePrefix OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Prefix SID."
+   ::= { f3SrRoutingTableEntry 1 }
+
+f3SrRoutingTableLabelIn OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Incoming Top Label."
+   ::= { f3SrRoutingTableEntry 2 }
+
+f3SrRoutingTableOutInterface OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Outgoing Interface."
+   ::= { f3SrRoutingTableEntry 3 }
+
+f3SrRoutingTableNextHop OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Next Hop IP Address."
+   ::= { f3SrRoutingTableEntry 4 }
+
+f3SrRoutingTableLabelAction OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "List of label actions."
+   ::= { f3SrRoutingTableEntry 5 }
+
+f3SrRoutingTableLabels OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "List of outgoing labels."
+   ::= { f3SrRoutingTableEntry 6 }
+
+f3SrRoutingTableRouteStatus OBJECT-TYPE
+    SYNTAX      TrafficIpRouteStatus
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Route Status."
+   ::= { f3SrRoutingTableEntry 7 }
+
+f3SrRoutingTableRouteOrigin OBJECT-TYPE
+    SYNTAX      TrafficIpRouteOriginType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Route Origin."
+   ::= { f3SrRoutingTableEntry 8 }
+
+f3SrRoutingTableRouteType OBJECT-TYPE
+    SYNTAX      IpEntryType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Route Type."
+   ::= { f3SrRoutingTableEntry 9 }
+
+--
+-- SRGB Collision Table
+--
+
+f3SRGBCollisionTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SRGBCollisionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "List of SRGB blocks that conflict."
+
+   ::= { f3SrObjects 10 }
+
+f3SRGBCollisionEntry OBJECT-TYPE
+    SYNTAX     F3SRGBCollisionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SRGBCollisionTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3SRGBCollisionLowerBound,
+              f3SRGBCollisionUpperBound }
+
+   ::= { f3SRGBCollisionTable 1 }
+
+F3SRGBCollisionEntry ::= SEQUENCE {
+    f3SRGBCollisionLowerBound             Unsigned32,
+    f3SRGBCollisionUpperBound             Unsigned32,
+    f3SRGBCollisionRoutingProtocol        ProtocolType,
+    f3SRGBCollisionOriginatingRtrId       DisplayString  
+}
+
+f3SRGBCollisionLowerBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Lower bound of the SRGB Collision."
+   ::= { f3SRGBCollisionEntry 1 }
+
+f3SRGBCollisionUpperBound OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Upper bound of the SRGB Collision."
+   ::= { f3SRGBCollisionEntry 2 }
+
+f3SRGBCollisionRoutingProtocol OBJECT-TYPE
+    SYNTAX      ProtocolType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Routing Protocol of SRGB Collision."
+   ::= { f3SRGBCollisionEntry 3 }
+
+f3SRGBCollisionOriginatingRtrId OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Originating Router ID of SRGB collision"
+   ::= { f3SRGBCollisionEntry 4 }
+
+--
+-- SID Collision Table
+--
+
+f3SIDCollisionTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3SIDCollisionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table of newly learned mappings containing a mapping where SID is already used"
+
+   ::= { f3SrObjects 11 }
+
+f3SIDCollisionEntry OBJECT-TYPE
+    SYNTAX     F3SIDCollisionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3SIDCollisionTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3SIDCollisionNewSIDRtrId,
+              f3SIDCollisionReceivedTarget,
+              f3SIDCollisionOriginalTarget,
+              f3SIDCollisionOriginalSIDRtrId,
+              f3SIDCollisionRoutingProtocol}
+
+   ::= { f3SIDCollisionTable 1 }
+
+F3SIDCollisionEntry ::= SEQUENCE {
+    f3SIDCollisionNewSIDRtrId            DisplayString,
+    f3SIDCollisionReceivedTarget         DisplayString,
+    f3SIDCollisionOriginalTarget         DisplayString,
+    f3SIDCollisionOriginalSIDRtrId       DisplayString,
+    f3SIDCollisionIndex                  Unsigned32,
+    f3SIDCollisionRoutingProtocol        ProtocolType
+}
+
+f3SIDCollisionNewSIDRtrId OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "New SID Router ID of SID collision"
+   ::= { f3SIDCollisionEntry 1 }
+
+f3SIDCollisionReceivedTarget OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Original Target of SID collision"
+   ::= { f3SIDCollisionEntry 2 }
+
+f3SIDCollisionOriginalTarget OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Original Target of SID collision"
+   ::= { f3SIDCollisionEntry 3 }
+
+
+f3SIDCollisionOriginalSIDRtrId OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Original SID Router ID of SID collision"
+   ::= { f3SIDCollisionEntry 4 }
+
+f3SIDCollisionIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Index used by two different prefixes of the SID Collision."
+   ::= { f3SIDCollisionEntry 5 }
+
+f3SIDCollisionRoutingProtocol OBJECT-TYPE
+    SYNTAX      ProtocolType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Routing Protocol of SID Collision."
+   ::= { f3SIDCollisionEntry 6 }
+
+--
+-- Index Out of Range Table
+--
+
+f3IndexOutOfRangeTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3IndexOutOfRangeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Table is updated when a binding is received containing a segment index which is out of the local configured ranges"
+
+   ::= { f3SrObjects 12 }
+
+f3IndexOutOfRangeEntry OBJECT-TYPE
+    SYNTAX     F3IndexOutOfRangeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3IndexOutOfRangeTable."
+    INDEX   { neIndex,
+              f3VrfIndex,
+              f3SrIndex,
+              f3IndexOutOfRangeReceivedIndex,
+              f3IndexOutOfRangeRoutingProtocol }
+
+   ::= { f3IndexOutOfRangeTable 1 }
+
+F3IndexOutOfRangeEntry ::= SEQUENCE {
+    f3IndexOutOfRangeReceivedTarget         DisplayString,
+    f3IndexOutOfRangeReceivedIndex          Unsigned32,
+    f3IndexOutOfRangeRoutingProtocol        ProtocolType
+}
+
+f3IndexOutOfRangeReceivedTarget OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Received Target of Index Out of Range."
+   ::= { f3IndexOutOfRangeEntry 1 }
+
+f3IndexOutOfRangeReceivedIndex OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Received Index of Index Out of Range."
+   ::= { f3IndexOutOfRangeEntry 2 }
+
+f3IndexOutOfRangeRoutingProtocol OBJECT-TYPE
+    SYNTAX      ProtocolType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Routing Protocol of Indext Out of Range."
+   ::= { f3IndexOutOfRangeEntry 3 }
+
+
+--
+-- Conformance
+--
+f3SRCompliances OBJECT IDENTIFIER ::= {f3SrConformance 1}
+f3SRGroups      OBJECT IDENTIFIER ::= {f3SrConformance 2}
+
+f3SRCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the SR."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3SRObjectsGroup
+        }
+    ::= { f3SRCompliances 1 }
+
+f3SRObjectsGroup OBJECT-GROUP
+    OBJECTS {    
+
+        f3SrIndex,
+        f3SrMaxSidDepth,
+        f3SrTransportType,
+        f3SrPingResult,
+        f3SrTraceRouteResult,
+        f3SrSidAlgorithm,
+        f3SrActionDestinationType,
+        f3SrActionIpPrefix,
+        f3SrActionSidList,
+        f3SrActionSrPolicy,
+        f3SrActionSrcInterface,
+        f3SrActionNextHop,
+        f3SrActionOutInterface,
+        f3SrActionRepeatCount,
+        f3SrActionInterval,
+        f3SrActionPacketSize,
+        f3SrActionTimeout,
+        f3SrActionTtl,
+        f3SrActionExpBits,
+        f3SrAction,
+        f3SrRowStatus,
+
+        f3SrgbLowerBound,
+        f3SrgbUpperBound,
+        f3SrgbRowStatus,
+
+        f3SrlbLowerBound,
+        f3SrlbUpperBound,
+        f3SrlbRowStatus,
+
+        f3ConnPrefixSidPrefix,
+        f3ConnPrefixSidAlgorithm,
+        f3ConnPrefixSidType,
+        f3ConnPrefixSidStartSid,
+        f3ConnPrefixSidRange,
+        f3ConnPrefixLastHopBehavior,
+        f3ConnPrefixSidRowStatus,
+    
+        f3LocalPrefixSidPrefix,
+        f3LocalPrefixSidAlgorithm,
+        f3LocalPrefixSidType,
+        f3LocalPrefixSidSid,
+        f3LocalPrefixSidIsProtected,
+        f3LocalPrefixSidIpInterface,
+        f3LocalPrefixSidRowStatus,
+    
+        f3SrPolicyName,
+        f3SrPolicySidList,
+        f3SrPolicyRowStatus,
+
+        f3SrSidListTarget,
+        f3SrSidListSid,
+        f3SrSidListSource,
+        f3SrSidListSourceProtocol,
+        f3SrSidListBindingType,
+        f3SrSidListUsed,
+        f3SrSidListAlgorithm,
+        f3SrSidListSidScope,
+    
+        f3LabelBlockLowerBound,
+        f3LabelBlockUpperBound,
+        f3LabelBlockSize,
+        f3LabelBlockUsed,
+        f3LabelBlockScope,
+    
+        f3SrRoutingTablePrefix,
+        f3SrRoutingTableLabelIn,
+        f3SrRoutingTableOutInterface,
+        f3SrRoutingTableNextHop,
+        f3SrRoutingTableLabelAction,
+        f3SrRoutingTableLabels,
+        f3SrRoutingTableRouteStatus,
+        f3SrRoutingTableRouteOrigin,
+        f3SrRoutingTableRouteType,
+    
+        f3SRGBCollisionLowerBound,
+        f3SRGBCollisionUpperBound,
+        f3SRGBCollisionRoutingProtocol,
+        f3SRGBCollisionOriginatingRtrId,
+        
+        f3SIDCollisionNewSIDRtrId,
+        f3SIDCollisionReceivedTarget,
+        f3SIDCollisionOriginalTarget,
+        f3SIDCollisionOriginalSIDRtrId,
+        f3SIDCollisionIndex,
+        f3SIDCollisionRoutingProtocol,
+    
+        f3IndexOutOfRangeReceivedTarget,
+        f3IndexOutOfRangeReceivedIndex,
+        f3IndexOutOfRangeRoutingProtocol
+        
+    }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects used to manage the SR functionality."
+    ::= { f3SRGroups 1 }
+
+
+END

@@ -1,0 +1,616 @@
+F3-HAN-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32
+             FROM SNMPv2-SMI
+    RowStatus, StorageType, DisplayString, TruthValue, 
+    VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    InterfaceIndex
+             FROM IF-MIB
+    PhysicalIndex
+             FROM ENTITY-MIB
+    fsp150cm
+             FROM ADVA-MIB
+    AdminState, OperationalState, SecondaryState,
+    PerfCounter64
+             FROM CM-COMMON-MIB
+    neIndex, shelfIndex, slotIndex
+             FROM CM-ENTITY-MIB
+    f3L3FlowPointEntry
+             FROM F3-L3-MIB;
+
+f3HANMIB MODULE-IDENTITY
+    LAST-UPDATED    "201802020000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the MIB definitions for Hybrid Access
+             Network function used by the FSP150CM and FSP150CC product 
+             lines.
+             Copyright (C) ADVA."
+    REVISION        "201802020000Z"
+    DESCRIPTION
+        "Notes from release 201802020000Z," 
+
+    ::= {fsp150cm 50}
+
+
+-- 
+-- OID definitions
+-- 
+
+f3HanConfigObjects      OBJECT IDENTIFIER ::= {f3HANMIB 1}
+f3HanStatsObjects       OBJECT IDENTIFIER ::= {f3HANMIB 2}
+f3HanConformance        OBJECT IDENTIFIER ::= {f3HANMIB 3}
+
+
+--
+-- Textual Conventions
+--
+
+HapgProtctionType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Enumerations for HAPG protection type.
+             oneForOne    -1:1,
+             loadSharing  -load sharing"
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            oneForOne (1),
+            loadSharing (2)
+        }
+
+HapgPathStateType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Enumerations for HAPG path state."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            active (1),
+            standby (2)
+        }
+
+HapgActionType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Enumerations for HAPG user initiated Action.
+            forced     -forced switch to 3GPP path.
+            lockout    -lockout to fixed path.
+            clear      -clear switch request.
+            resetStats - reset statistics."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            forced (1),
+            lockout (2),
+            clear (3),
+            resetStats (4)
+        }
+
+HapgStateType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Enumerations for HPG state
+             noOutstandingReq    - no out standing request
+             forced              - forced to 3GPP path
+             lockout             - lockout to fixed path
+             wtr                 - wait to restore
+             sfOnFixed           - singal fail on fixed path
+             sfOn3gpp            - singal fail on 3GPP path."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            noOutstandingReq (1),
+            forced (2),
+            lockout (3),
+            wtr (4),
+            sfOnFixed (5),
+            sfOn3gpp (6)
+        }
+
+
+--
+-- Mobile Traffic Port Table
+--
+
+f3MobileTrafficPortTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MobileTrafficPortEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "."
+
+   ::= { f3HanConfigObjects 1 }
+
+f3MobileTrafficPortEntry OBJECT-TYPE
+    SYNTAX      F3MobileTrafficPortEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3MobileTrafficPortTable."
+    INDEX   { neIndex, 
+              shelfIndex, 
+              slotIndex,
+              f3MobileTrafficPortIndex }
+
+   ::= { f3MobileTrafficPortTable 1 }
+
+F3MobileTrafficPortEntry ::= SEQUENCE {
+    f3MobileTrafficPortIndex              Unsigned32,
+    f3MobileTrafficPortAlias              DisplayString,
+    f3MobileTrafficPortIfIndex            InterfaceIndex,
+    f3MobileTrafficPortEntityIndex        PhysicalIndex,
+    f3MobileTrafficPortAdminState         AdminState,
+    f3MobileTrafficPortSecondaryState     SecondaryState,
+    f3MobileTrafficPortOperationalState   OperationalState,
+    f3MobileTrafficPortStorageType        StorageType,
+    f3MobileTrafficPortRowStatus          RowStatus
+}
+
+f3MobileTrafficPortIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An integer index value used to uniquely identify
+         this Mobile Traffic Port within a card."
+   ::= { f3MobileTrafficPortEntry 1 }
+
+f3MobileTrafficPortAlias    OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..256))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+         "This object allows SNMP management entities to provide an 
+          alias to the Mobile Traffic Port entity."
+     ::= { f3MobileTrafficPortEntry 2 }
+
+f3MobileTrafficPortIfIndex OBJECT-TYPE
+    SYNTAX      InterfaceIndex 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "This object has the same value as ifIndex for 
+             Ethernet Port.  An integer index value used to 
+             uniquely identify the Mobile Traffic Port."
+    ::= { f3MobileTrafficPortEntry 3 }
+
+f3MobileTrafficPortEntityIndex OBJECT-TYPE
+    SYNTAX      PhysicalIndex 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "Entity Index from ENTITY-MIB for the Mobile Traffic Port."
+    ::= { f3MobileTrafficPortEntry 4 }
+
+f3MobileTrafficPortAdminState OBJECT-TYPE
+    SYNTAX      AdminState 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This object represents the Administrative State of the Mobile Traffic Port."
+    ::= { f3MobileTrafficPortEntry 5 }
+
+f3MobileTrafficPortSecondaryState OBJECT-TYPE
+    SYNTAX      SecondaryState 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "This object represents the Secondary State of the Mobile Traffic Port."
+    ::= { f3MobileTrafficPortEntry 6 }
+
+f3MobileTrafficPortOperationalState OBJECT-TYPE
+    SYNTAX      OperationalState 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "This object represents the Operational State of the Mobile Traffic Port."
+    ::= { f3MobileTrafficPortEntry 7 }
+
+f3MobileTrafficPortStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The storage type for this conceptual row."
+   ::= { f3MobileTrafficPortEntry 8 }
+
+f3MobileTrafficPortRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row.  An entry MUST NOT exist in the 
+        active state unless all objects in the entry have an 
+        appropriate value, as described
+        in the description clause for each writable object.
+
+        The values of f3MobileTrafficPortRowStatus supported are
+        createAndGo(4) and destroy(6).  All mandatory attributes
+        must be specified in a single SNMP SET request with
+        f3MobileTrafficPortRowStatus value as createAndGo(4).
+        Upon successful row creation, this object has a
+        value of active(1).
+
+        The f3MobileTrafficPortRowStatus object may be modified if
+        the associated instance of this object is equal to active(1)."
+   ::= { f3MobileTrafficPortEntry 9 }
+
+
+--
+-- Hybrid Access Path Group Table
+--
+
+f3HapgTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3HapgEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A list of entries corresponding to the Hybird Access Path Groups."
+
+   ::= { f3HanConfigObjects 2 }
+
+f3HapgEntry OBJECT-TYPE
+    SYNTAX      F3HapgEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3HapgTable."
+    INDEX   { neIndex, 
+              f3HapgIndex }
+
+   ::= { f3HapgTable 1 }
+
+F3HapgEntry ::= SEQUENCE {
+    f3HapgIndex                       Unsigned32,
+    f3HapgUserLabel                   DisplayString,
+    f3HapgAdminState                  AdminState,
+    f3HapgSecondaryState              SecondaryState,
+    f3HapgOperationalState            OperationalState,
+    f3HapgProtctionType               HapgProtctionType,
+    f3HapgRevertive                   TruthValue,
+    f3HapgWtr                         Integer32,
+    f3HapgHoldOffTime                 Integer32,
+    f3HapgFixedPath                   VariablePointer,
+    f3HapgFixedPathBfd                VariablePointer,
+    f3HapgFixedPathState              HapgPathStateType,
+    f3Hapg3GPPPath                    VariablePointer,
+    f3Hapg3GPPPathBfd                 VariablePointer,
+    f3Hapg3GPPPathState               HapgPathStateType,
+    f3HapgAction                      HapgActionType,
+    f3HapgGroupState                  HapgStateType,
+    f3HapgStorageType                 StorageType,
+    f3HapgRowStatus                   RowStatus
+}
+
+f3HapgIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Index of Hybrid Access Path Group."
+   ::= { f3HapgEntry 1 }
+
+f3HapgUserLabel OBJECT-TYPE
+    SYNTAX  DisplayString (SIZE (0..64))
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "User Label associated with the Hybrid Access Path Group."
+    ::= { f3HapgEntry 2 }
+
+f3HapgAdminState OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This object represents the Administrative State of this Hybrid Access Path Group." 
+    ::= { f3HapgEntry 3 }
+
+f3HapgSecondaryState OBJECT-TYPE
+    SYNTAX      SecondaryState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "This object represents the Secondary State of this Hybrid Access Path Group." 
+    ::= { f3HapgEntry 4 }
+
+f3HapgOperationalState OBJECT-TYPE
+    SYNTAX      OperationalState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "This object represents the Operational State of this Hybrid Access Path Group." 
+    ::= { f3HapgEntry 5 }
+
+f3HapgProtctionType OBJECT-TYPE
+    SYNTAX  HapgProtctionType
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Hybrid Access Path Group's Protection Type."
+    ::= { f3HapgEntry 6 }
+
+f3HapgRevertive OBJECT-TYPE
+    SYNTAX  TruthValue
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Whether the HAPG Protection is revertive or not
+         This object is not applicable for HapgProtctionType load-sharing."
+    ::= { f3HapgEntry 7 }
+
+f3HapgWtr OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Time to wait before reverting to fixed path, 
+         from 5 to 12mins with increments of 1 min, 0 means no wait to restore time."
+    ::= { f3HapgEntry 8 }
+
+f3HapgHoldOffTime OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "The Hold off time of the Hybrid Access Path Group,
+         from 0 to 10 seconds with increments of 100 ms."
+    ::= { f3HapgEntry 9 }
+
+f3HapgFixedPath OBJECT-TYPE
+    SYNTAX  VariablePointer
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Pointer to a port instance which represents the fixed path of the Hybrid Access Path Group."
+    ::= { f3HapgEntry 10 }
+
+f3HapgFixedPathBfd OBJECT-TYPE
+    SYNTAX  VariablePointer
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Pointer to a BFD session instance which is used to detect the link status of fixed path."
+    ::= { f3HapgEntry 11 }
+
+f3HapgFixedPathState OBJECT-TYPE
+    SYNTAX  HapgPathStateType
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The fixed path state of Hybrid Access Path group."
+    ::= { f3HapgEntry 12 }
+
+f3Hapg3GPPPath OBJECT-TYPE
+    SYNTAX  VariablePointer
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Pointer to a port instance which represents the 3GPP path of the Hybrid Access Path Group."
+    ::= { f3HapgEntry 13 }
+
+f3Hapg3GPPPathBfd OBJECT-TYPE
+    SYNTAX  VariablePointer
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Pointer to a BFD session instance which is used to detect the link status of 3GPP path."
+    ::= { f3HapgEntry 14 }
+
+f3Hapg3GPPPathState OBJECT-TYPE
+    SYNTAX  HapgPathStateType
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The 3GPP path state of Hybrid Access Path group."
+    ::= { f3HapgEntry 15 }
+
+f3HapgAction OBJECT-TYPE
+    SYNTAX  HapgActionType
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "User action performed on this Hybrid Access Path group."
+    ::= { f3HapgEntry 16 }
+
+f3HapgGroupState OBJECT-TYPE
+    SYNTAX  HapgStateType
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The Hybrid Access Path Group states."
+    ::= { f3HapgEntry 17 }
+
+f3HapgStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The storage type for this conceptual row."
+   ::= { f3HapgEntry 18 }
+
+f3HapgRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row.  An entry MUST NOT exist in the 
+        active state unless all objects in the entry have an 
+        appropriate value, as described
+        in the description clause for each writable object.
+
+        The values of f3HapgRowStatus supported are
+        createAndGo(4) and destroy(6).  All mandatory attributes
+        must be specified in a single SNMP SET request with
+        f3HapgRowStatus value as createAndGo(4).
+        Upon successful row creation, this object has a
+        value of active(1).
+
+        The f3HapgRowStatus object may be modified if
+        the associated instance of this object is equal to active(1)."
+   ::= { f3HapgEntry 19 }
+
+
+--
+-- L3 FlowPoint Extended Table
+--
+
+f3L3FlowPointHapgTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3L3FlowPointHapgEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A list of entries for L3 Flow Point to be associated with a Hybrid Path Group."
+
+   ::= { f3HanConfigObjects 3 }
+
+f3L3FlowPointHapgEntry OBJECT-TYPE
+    SYNTAX      F3L3FlowPointHapgEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3L3FlowPointHapgTable."
+    AUGMENTS { f3L3FlowPointEntry }
+
+   ::= { f3L3FlowPointHapgTable 1 }
+
+F3L3FlowPointHapgEntry ::= SEQUENCE {
+    f3L3FlowPointAssociatedHpg     VariablePointer
+}
+
+f3L3FlowPointAssociatedHpg OBJECT-TYPE
+    SYNTAX  VariablePointer
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "Pointer to a Hybrid Path Group instance which is associated with this L3 Flow point."
+    ::= { f3L3FlowPointHapgEntry 1 }
+
+
+--
+--  Hybrid Access Path Group Stats
+--
+f3HapgStatsTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3HapgStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to Hybrid Access Path Group Statistics"
+    ::= { f3HanStatsObjects 1 }
+
+f3HapgStatsEntry OBJECT-TYPE
+    SYNTAX      F3HapgStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3HapgStatsTable."
+    INDEX { neIndex, f3HapgIndex }
+    ::= { f3HapgStatsTable 1 }
+
+F3HapgStatsEntry ::= SEQUENCE {
+    f3HapgSwitchCount                           PerfCounter64
+}
+
+f3HapgSwitchCount OBJECT-TYPE
+    SYNTAX      PerfCounter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Total number of protection switch count."
+    ::= { f3HapgStatsEntry 1 }
+
+
+--
+-- Conformance
+--
+
+f3HanCompliances OBJECT IDENTIFIER ::= {f3HanConformance 1}
+f3HanGroups      OBJECT IDENTIFIER ::= {f3HanConformance 2}
+
+f3HanCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-HAN-MIB compliance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3MobileTrafficPortGroup,
+              f3HapgGroup,
+              f3L3FlowPointHapgGroup,
+              f3HapgStatsGroup
+        }
+    ::= { f3HanCompliances 1 }
+
+f3MobileTrafficPortGroup OBJECT-GROUP
+    OBJECTS {
+      f3MobileTrafficPortIndex,
+      f3MobileTrafficPortAlias, 
+      f3MobileTrafficPortIfIndex,
+      f3MobileTrafficPortEntityIndex,
+      f3MobileTrafficPortAdminState,
+      f3MobileTrafficPortSecondaryState,
+      f3MobileTrafficPortOperationalState,
+      f3MobileTrafficPortStorageType,
+      f3MobileTrafficPortRowStatus
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the Mobile Traffic Port."
+    ::= { f3HanGroups 1 }
+
+f3HapgGroup OBJECT-GROUP
+    OBJECTS {
+      f3HapgIndex,
+      f3HapgUserLabel,
+      f3HapgAdminState, 
+      f3HapgSecondaryState,
+      f3HapgOperationalState,
+      f3HapgProtctionType,
+      f3HapgRevertive,
+      f3HapgWtr,
+      f3HapgHoldOffTime,
+      f3HapgFixedPath,
+      f3HapgFixedPathBfd,
+      f3HapgFixedPathState,
+      f3Hapg3GPPPath,
+      f3Hapg3GPPPathBfd,
+      f3Hapg3GPPPathState,
+      f3HapgAction,
+      f3HapgGroupState,
+      f3HapgStorageType,
+      f3HapgRowStatus
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the Hybrid Access Path Group."
+    ::= { f3HanGroups 2 }
+
+f3L3FlowPointHapgGroup OBJECT-GROUP
+    OBJECTS {
+      f3L3FlowPointAssociatedHpg
+    }
+    STATUS  current
+    DESCRIPTION
+             "."
+    ::= { f3HanGroups 3 }
+
+f3HapgStatsGroup OBJECT-GROUP
+    OBJECTS {
+      f3HapgSwitchCount
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the Hybrid Access Path Group Statistics."
+    ::= { f3HanGroups 4 }
+
+END

@@ -1,0 +1,526 @@
+F3-ELP-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32
+             FROM SNMPv2-SMI
+    TruthValue, RowStatus, StorageType, DisplayString,
+    MacAddress, VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    neIndex
+             FROM CM-ENTITY-MIB
+    fsp150cm
+             FROM  ADVA-MIB 
+    AdminState, OperationalState, SecondaryState,
+    VlanId, VlanPriority, VlanEthertype, PerfCounter64
+             FROM  CM-COMMON-MIB
+    Dot1agCfmMDLevel 
+             FROM  IEEE8021-CFM-MIB
+    CmProtUnitType, CmProtUnitState
+             FROM  CM-PROTECTION-MIB;
+
+f3ElpMIB MODULE-IDENTITY
+    LAST-UPDATED        "201209130000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the G.8031 Ethernet Linear Protection MIB definitions 
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "201209130000Z"
+    DESCRIPTION
+        "
+         Notes from release 201209130000Z,
+         (1)MIB version ready for release FSP150CC 9.1GE110Pro." 
+
+    ::= {fsp150cm 48}    
+
+
+--
+-- Textual Conventions
+--
+
+ElpGroupStatus ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Indicates the Elp group status."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   noOutStandingRequest (1),
+                   manualWorking (2),
+                   forcedProtect (3),
+                   lockoutProtect (4),
+                   waitToRestore (5),
+                   sfProtect (6),
+                   sfWorking (7),
+                   manualProtect (8),
+                   sdOnProtect (9),
+                   sdOnWorking (10)
+                 }
+
+ElpProtectionType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Indicates the Elp group protect type."
+    SYNTAX       INTEGER {
+                   onePlusOneUniDirectionalNoAps (1)
+                 }
+
+ElpUnitState ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Indicates the Elp unit state."
+    SYNTAX       INTEGER {
+                   active (1),
+                   standby (2)
+                 }
+
+ElpUnitType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Indicates the Elp unit type."
+    SYNTAX       INTEGER {
+                   working (1),
+                   protect (2)
+                 }
+
+ElpGroupAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Indicates the Elp group action."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   lockoutOnProtect (1),
+                   forcedSwitchToProtect (2),
+                   manualSwitchToWork (3),
+                   manualSwitchToProtect (4),
+                   clear (5)
+                 }
+
+ElpStatisticsAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Elp statistic action."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   resetStatistics (1)
+                 }
+
+-- 
+-- OID definitions
+-- 
+f3ElpConfigObjects      OBJECT IDENTIFIER ::= {f3ElpMIB 1}
+f3ElpStatsObjects       OBJECT IDENTIFIER ::= {f3ElpMIB 2}
+f3ElpConformance        OBJECT IDENTIFIER ::= {f3ElpMIB 3}
+
+--
+--  Ethernet Linear Protection Group
+--
+f3ElpGroupTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3ElpGroupEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to Ethernet Linear Protection 
+             instance for configuration purposes."
+    ::= { f3ElpConfigObjects 1 }
+
+f3ElpGroupEntry OBJECT-TYPE
+    SYNTAX      F3ElpGroupEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3ElpGroupTable."
+    INDEX { neIndex, f3ElpGroupIndex }
+    ::= { f3ElpGroupTable 1 }
+
+F3ElpGroupEntry ::= SEQUENCE {
+    f3ElpGroupIndex                           Integer32,
+    f3ElpGroupAdminState                      AdminState,
+    f3ElpGroupOperationalState                OperationalState,
+    f3ElpGroupSecondaryState                  SecondaryState,
+    f3ElpGroupStorageType                     StorageType,
+    f3ElpGroupRowStatus                       RowStatus,
+    f3ElpGroupLabel                           DisplayString,
+    f3ElpGroupRevertive                       TruthValue,
+    f3ElpGroupWaitToRestore                   Integer32,
+    f3ElpGroupStatus                          ElpGroupStatus,
+    f3ElpGroupProtectionType                  ElpProtectionType,
+    f3ElpGroupHoldOffTime                     Integer32,
+    f3ElpGroupWorkingPort                     VariablePointer,
+    f3ElpGroupWorkingMep                      VariablePointer,
+    f3ElpGroupProtectPort                     VariablePointer,
+    f3ElpGroupProtectMep                      VariablePointer,
+    f3ElpGroupSwitchAction                    ElpGroupAction,
+    f3ElpGroupFreezeAction                    TruthValue,
+    f3ElpGroupStatisticsAction                ElpStatisticsAction
+}
+
+f3ElpGroupIndex OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+             this ELP Group within Network Element."
+    ::= { f3ElpGroupEntry 1 }
+
+f3ElpGroupAdminState OBJECT-TYPE
+    SYNTAX        AdminState
+    MAX-ACCESS    read-create
+    STATUS        current
+    DESCRIPTION
+         "Administrative State of this ELP instance."
+    ::= { f3ElpGroupEntry 2 }
+
+f3ElpGroupOperationalState OBJECT-TYPE
+    SYNTAX        OperationalState
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "Operational State of this ELP instance."
+    ::= { f3ElpGroupEntry 3 }
+
+f3ElpGroupSecondaryState OBJECT-TYPE
+    SYNTAX        SecondaryState
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "Secondary State of this ELP instance."
+    ::= { f3ElpGroupEntry 4 }
+
+f3ElpGroupStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3ElpGroupEntry 5 }
+
+f3ElpGroupRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.  An entry MUST NOT exist in the 
+            active state unless all objects in the entry have an 
+            appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3ElpGroupRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            neRowStatus value as createAndGo(4).
+            Upon successful row creation, this object has a
+            value of active(1).
+
+            The f3ElpGroupRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3ElpGroupEntry 6 }
+
+f3ElpGroupLabel OBJECT-TYPE
+    SYNTAX     DisplayString (SIZE (0..64)) 
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The Elp group label value."
+    ::= { f3ElpGroupEntry 7 }
+
+f3ElpGroupRevertive OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The revertive control for the ELP instance."
+    ::= { f3ElpGroupEntry 8 }
+
+f3ElpGroupWaitToRestore OBJECT-TYPE
+    SYNTAX     Integer32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The Wait-to-Restore time value in minutes for this ELP instance."
+    ::= { f3ElpGroupEntry 9 }
+
+f3ElpGroupStatus OBJECT-TYPE
+    SYNTAX     ElpGroupStatus
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "The current status of ELP instance."
+    ::= { f3ElpGroupEntry 10 }
+
+f3ElpGroupProtectionType OBJECT-TYPE
+    SYNTAX     ElpProtectionType
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The proection type of ELP instance."
+    ::= { f3ElpGroupEntry 11 }
+
+f3ElpGroupHoldOffTime OBJECT-TYPE
+    SYNTAX     Integer32 (0..10000)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The Hold-off Time value in milliseconds for this ELP instance."
+    ::= { f3ElpGroupEntry 12 }
+
+f3ElpGroupWorkingPort OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The working port object for this ELP instance."
+    ::= { f3ElpGroupEntry 13 }
+
+f3ElpGroupWorkingMep OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The working mep object for this ELP instance."
+    ::= { f3ElpGroupEntry 14 }
+
+f3ElpGroupProtectPort OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The working port object for this ELP instance."
+    ::= { f3ElpGroupEntry 15 }
+
+f3ElpGroupProtectMep OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The working mep object for this ELP instance."
+    ::= { f3ElpGroupEntry 16 }
+
+f3ElpGroupSwitchAction OBJECT-TYPE
+    SYNTAX     ElpGroupAction
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The action on this ELP instance."
+    ::= { f3ElpGroupEntry 17 }
+
+f3ElpGroupFreezeAction OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The action on ELP instance whether freeze."
+    ::= { f3ElpGroupEntry 18 }
+
+f3ElpGroupStatisticsAction OBJECT-TYPE
+    SYNTAX     ElpStatisticsAction
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "Reset statistic on ELP instance."
+    ::= { f3ElpGroupEntry 19 }
+
+--
+--  Ethernet Linear Protection Protected Flows
+--
+f3ElpGroupProtectedFlowTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3ElpGroupProtectedFlowEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to Flows which are protected by 
+             an ELP group instance. These flows can be access flows or multipoint
+             flows depending on the traffic model of the ELP Ring Port."
+    ::= { f3ElpConfigObjects 2 }
+
+f3ElpGroupProtectedFlowEntry OBJECT-TYPE
+    SYNTAX      F3ElpGroupProtectedFlowEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3ElpGroupProtectedFlowsTable."
+    INDEX { neIndex, f3ElpGroupIndex, f3ElpGroupProtectedFlow } 
+    ::= { f3ElpGroupProtectedFlowTable 1 }
+
+F3ElpGroupProtectedFlowEntry ::= SEQUENCE {
+    f3ElpGroupProtectedFlow                   VariablePointer
+}
+
+f3ElpGroupProtectedFlow OBJECT-TYPE
+    SYNTAX        VariablePointer
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "Pointer to a Flow instance which is protected by an ELP instance.
+          The pointer must be set to cmFlowIndex or cmMPFlowIndex instance."
+    ::= { f3ElpGroupProtectedFlowEntry 1 }
+
+--
+--  Ethernet Linear Protection Unit
+--
+f3ElpUnitTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3ElpUnitEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to Ethernet Linear Protection Unit"
+    ::= { f3ElpConfigObjects 3 }
+
+f3ElpUnitEntry OBJECT-TYPE
+    SYNTAX      F3ElpUnitEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3ElpUnitTable."
+    INDEX { neIndex, f3ElpGroupIndex, f3ElpUnitIndex }
+    ::= { f3ElpUnitTable 1 }
+
+F3ElpUnitEntry ::= SEQUENCE {
+    f3ElpUnitIndex                           Integer32,
+    f3ElpUnitPort                            VariablePointer,
+    f3ElpUnitType                            ElpUnitType,
+    f3ElpUnitState                           ElpUnitState
+}
+ 
+f3ElpUnitIndex OBJECT-TYPE
+    SYNTAX        Integer32 (1..2)
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "An integer index value used to uniquely identify
+             this ELP Unit within ELP Group."
+    ::= { f3ElpUnitEntry 1 }
+
+f3ElpUnitPort OBJECT-TYPE
+    SYNTAX     VariablePointer 
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "ELP Unit's points to a facility (port). 
+          This object represents the facility Network Element port."
+     ::= { f3ElpUnitEntry 2 }
+
+f3ElpUnitType OBJECT-TYPE
+    SYNTAX        ElpUnitType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "The work or protect type for ELP unit."
+    ::= { f3ElpUnitEntry 3 }
+
+f3ElpUnitState OBJECT-TYPE
+    SYNTAX        ElpUnitState
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "The active or standby state value for ELP unit."
+    ::= { f3ElpUnitEntry 4 }
+
+--
+--  Ethernet Linear Protection Group Stats
+--
+f3ElpGroupStatsTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3ElpGroupStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries corresponding to Ethernet Linear Protection Statistics"
+    ::= { f3ElpStatsObjects 1 }
+
+f3ElpGroupStatsEntry OBJECT-TYPE
+    SYNTAX      F3ElpGroupStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3ElpGroupStatsTable."
+    INDEX { neIndex, f3ElpGroupIndex }
+    ::= { f3ElpGroupStatsTable 1 }
+
+F3ElpGroupStatsEntry ::= SEQUENCE {
+    f3ElpProtectionSwitchCount                           PerfCounter64
+}
+
+f3ElpProtectionSwitchCount OBJECT-TYPE
+    SYNTAX      PerfCounter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Total number of protection switch count."
+    ::= { f3ElpGroupStatsEntry 1 }
+
+--
+-- Conformance
+--
+f3ElpCompliances OBJECT IDENTIFIER ::= {f3ElpConformance 1}
+f3ElpGroups      OBJECT IDENTIFIER ::= {f3ElpConformance 2}
+
+f3ElpCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-ELP-MIB compilance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3ElpGroupGroup, f3ElpUnitGroup, f3ElpUnitStatsGroup
+        }
+    ::= { f3ElpCompliances 1 }
+
+f3ElpGroupGroup OBJECT-GROUP
+    OBJECTS {
+    f3ElpGroupIndex,
+    f3ElpGroupAdminState,
+    f3ElpGroupOperationalState,
+    f3ElpGroupSecondaryState,
+    f3ElpGroupStorageType,
+    f3ElpGroupRowStatus,
+    f3ElpGroupLabel,
+    f3ElpGroupRevertive,
+    f3ElpGroupWaitToRestore,
+    f3ElpGroupStatus,
+    f3ElpGroupProtectionType,
+    f3ElpGroupHoldOffTime,
+    f3ElpGroupWorkingPort,
+    f3ElpGroupWorkingMep,
+    f3ElpGroupProtectPort,
+    f3ElpGroupProtectMep,
+    f3ElpGroupSwitchAction,
+    f3ElpGroupFreezeAction
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the ELP Group."
+    ::= { f3ElpGroups 1 }
+
+f3ElpUnitGroup OBJECT-GROUP
+    OBJECTS {
+    f3ElpUnitIndex,
+    f3ElpUnitPort,
+    f3ElpUnitState
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the ELP Unit."
+    ::= { f3ElpGroups 2 }
+
+f3ElpUnitStatsGroup OBJECT-GROUP
+    OBJECTS {
+    f3ElpProtectionSwitchCount
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the ELP Unit Statistics."
+    ::= { f3ElpGroups 3 }
+
+END
+

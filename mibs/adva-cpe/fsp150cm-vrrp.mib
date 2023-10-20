@@ -1,0 +1,851 @@
+F3-VRRP-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32
+             FROM SNMPv2-SMI
+    RowStatus, StorageType, DisplayString,
+    VariablePointer, TEXTUAL-CONVENTION, TruthValue, MacAddress, DateAndTime
+             FROM SNMPv2-TC
+    fsp150cm
+             FROM  ADVA-MIB
+    IpVersion, PerfCounter64
+             FROM  CM-COMMON-MIB
+    neIndex, shelfIndex, slotIndex
+             FROM CM-ENTITY-MIB
+    f3L3FlowPointPortIndex, f3L3FlowPointIndex, f3L3TrafficIPIfIndex
+             FROM F3-L3-MIB;
+
+f3VRRPMIB MODULE-IDENTITY
+    LAST-UPDATED        "202101280000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the VRRP MIB defitinions
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "202101280000Z"
+    DESCRIPTION
+        "
+         Notes from release 201811160000Z.
+         (1) Change f3VrrpRouterUpDatetime row type to DateAndTime
+         "
+
+    ::= {fsp150cm 51}
+
+-- 
+-- OID definitions
+-- 
+f3VrrpConfigObjects      OBJECT IDENTIFIER ::= {f3VRRPMIB 1}
+f3VrrpConformance        OBJECT IDENTIFIER ::= {f3VRRPMIB 2}
+f3VrrpStatsObjects       OBJECT IDENTIFIER ::= {f3VRRPMIB 3}
+
+--
+-- Textual Conventions
+--
+
+VrrpTrackingState ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   up (1),
+                   down (2)
+                 }
+
+VrrpNewMasterReason ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   notMaster (1),
+                   priority (2),
+                   preempted (3),
+                   noResponse (4)
+                 }
+
+VrrpEventType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   none (1),
+                   startup (2),
+                   shutdown (3),
+                   highPriorityBackup (4),
+                   masterTimeout (5),
+                   interfaceUp (6),
+                   interfaceDown (7),
+                   noPrimaryIpAddress (8),
+                   primaryIpAddress (9),
+                   virtualIpAddress (10),
+                   preemptHoldTimeout (11),
+                   lowerPriorityMaster (12),
+                   ownerPreempt (13)
+                 }
+
+VrrpState ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   initialize (1),
+                   backup (2),
+                   master (3)
+                 }
+
+VrrpVersion ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   v2 (1),
+                   v3 (2)
+                 }
+
+
+--
+-- VRRP Router Table
+--
+f3VrrpRouterTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VrrpRouterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for VRRP Router."
+
+   ::= { f3VrrpConfigObjects 1 }
+
+f3VrrpRouterEntry OBJECT-TYPE
+    SYNTAX      F3VrrpRouterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VrrpRouterTable."
+    INDEX   { neIndex, shelfIndex, slotIndex,
+            f3L3FlowPointPortIndex, f3L3FlowPointIndex, 
+            f3L3TrafficIPIfIndex, f3VrrpRouterIndex }
+
+   ::= { f3VrrpRouterTable 1 }
+
+F3VrrpRouterEntry ::= SEQUENCE {
+    f3VrrpRouterIndex                Unsigned32,
+    f3VrrpRouterVersion              VrrpVersion,
+    f3VrrpRouterVrid                 Unsigned32,
+    f3VrrpRouterPriority             Unsigned32,
+    f3VrrpRouterIpVersion            IpVersion,
+    f3VrrpRouterVirtualIpAddr        DisplayString,
+    f3VrrpRouterAdsInterval          Unsigned32,
+    f3VrrpRouterPreemptMode          TruthValue,
+    f3VrrpRouterHoldTime             Unsigned32,
+    f3VrrpRouterAcceptMode           TruthValue,
+    f3VrrpRouterBfdSession           VariablePointer,
+    f3VrrpRouterState                VrrpState,
+    f3VrrpRouterMasterAdsInterval    Unsigned32,
+    f3VrrpRouterSkewTime             Unsigned32,
+    f3VrrpRouterMasterDownInterval   Unsigned32,
+    f3VrrpRouterIsOwner              TruthValue,
+    f3VrrpRouterLastAdsSource        DisplayString,
+    f3VrrpRouterUpDatetime           DateAndTime,
+    f3VrrpRouterLastEvent            VrrpEventType,
+    f3VrrpRouterNewMasterReason      VrrpNewMasterReason,
+    f3VrrpRouterVirtualMacAddr       MacAddress,
+    f3VrrpRouterStorageType          StorageType,
+    f3VrrpRouterRowStatus            RowStatus
+}
+
+f3VrrpRouterIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This is the unique index for Vrrp Router."
+   ::= { f3VrrpRouterEntry 1 }
+
+f3VrrpRouterVersion OBJECT-TYPE
+    SYNTAX      VrrpVersion
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 2 }
+
+f3VrrpRouterVrid OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 3 }
+
+f3VrrpRouterPriority OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 4 }
+
+f3VrrpRouterIpVersion OBJECT-TYPE
+    SYNTAX      IpVersion
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 5 }
+
+f3VrrpRouterVirtualIpAddr OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 6 }
+
+f3VrrpRouterAdsInterval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 7 }
+
+f3VrrpRouterPreemptMode OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 8 }
+
+f3VrrpRouterHoldTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 9 }
+
+f3VrrpRouterAcceptMode OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 10 }
+
+f3VrrpRouterBfdSession OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 11 }
+
+f3VrrpRouterState OBJECT-TYPE
+    SYNTAX      VrrpState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 12 }
+
+f3VrrpRouterMasterAdsInterval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 13 }
+
+f3VrrpRouterSkewTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 14 }
+
+f3VrrpRouterMasterDownInterval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 15 }
+
+f3VrrpRouterIsOwner OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 16 }
+
+f3VrrpRouterLastAdsSource OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 17 }
+
+f3VrrpRouterUpDatetime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 18 }
+
+f3VrrpRouterLastEvent OBJECT-TYPE
+    SYNTAX      VrrpEventType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 19 }
+
+f3VrrpRouterNewMasterReason OBJECT-TYPE
+    SYNTAX      VrrpNewMasterReason
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 20 }
+
+f3VrrpRouterVirtualMacAddr OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "."
+    ::= { f3VrrpRouterEntry 21 }
+
+f3VrrpRouterStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3VrrpRouterEntry 22 }
+
+f3VrrpRouterRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3VrrpRouterRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3VrrpRouterRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3VrrpRouterRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3VrrpRouterEntry 23 }
+
+
+--
+-- VRRP Tracking Route Table
+--
+f3VrrpTrackingRouteTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VrrpTrackingRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for VRRP Tracking Route."
+   ::= { f3VrrpConfigObjects 2 }
+
+f3VrrpTrackingRouteEntry OBJECT-TYPE
+    SYNTAX      F3VrrpTrackingRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VrrpTrackingRouteTable."
+    INDEX   { neIndex, shelfIndex, slotIndex,
+            f3L3FlowPointPortIndex, f3L3FlowPointIndex, 
+            f3L3TrafficIPIfIndex, f3VrrpRouterIndex,
+            f3VrrpTrackingRoutePrefix }
+
+   ::= { f3VrrpTrackingRouteTable 1 }
+
+F3VrrpTrackingRouteEntry ::= SEQUENCE {
+    f3VrrpTrackingRoutePrefix                DisplayString,
+    f3VrrpTrackingRoutePriorityDecrement     Unsigned32,
+    f3VrrpTrackingRouteState                 VrrpTrackingState,
+    f3VrrpTrackingRouteStorageType           StorageType,
+    f3VrrpTrackingRouteRowStatus             RowStatus
+}
+
+f3VrrpTrackingRoutePrefix OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingRouteEntry 1 }
+
+f3VrrpTrackingRoutePriorityDecrement OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingRouteEntry 2 }
+
+f3VrrpTrackingRouteState OBJECT-TYPE
+    SYNTAX      VrrpTrackingState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingRouteEntry 3 }
+
+f3VrrpTrackingRouteStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3VrrpTrackingRouteEntry 4 }
+
+f3VrrpTrackingRouteRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3VrrpTrackingRouteRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3VrrpTrackingRouteRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3VrrpTrackingRouteRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3VrrpTrackingRouteEntry 5 }
+
+
+--
+-- VRRP Tracking L3 Interface Table
+--
+f3VrrpTrackingL3InterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VrrpTrackingL3InterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for VRRP Tracking L3 Interface."
+   ::= { f3VrrpConfigObjects 3 }
+
+f3VrrpTrackingL3InterfaceEntry OBJECT-TYPE
+    SYNTAX      F3VrrpTrackingL3InterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VrrpTrackingL3InterfaceTable."
+    INDEX   { neIndex, shelfIndex, slotIndex,
+            f3L3FlowPointPortIndex, f3L3FlowPointIndex, 
+            f3L3TrafficIPIfIndex, f3VrrpRouterIndex,
+            f3VrrpTrackingL3InterfaceName }
+
+   ::= { f3VrrpTrackingL3InterfaceTable 1 }
+
+F3VrrpTrackingL3InterfaceEntry ::= SEQUENCE {
+    f3VrrpTrackingL3InterfaceName                  DisplayString,
+    f3VrrpTrackingL3InterfacePriorityDecrement     Unsigned32,
+    f3VrrpTrackingL3InterfaceState                 VrrpTrackingState,
+    f3VrrpTrackingL3InterfaceStorageType           StorageType,
+    f3VrrpTrackingL3InterfaceRowStatus             RowStatus
+}
+
+f3VrrpTrackingL3InterfaceName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingL3InterfaceEntry 1 }
+
+f3VrrpTrackingL3InterfacePriorityDecrement OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingL3InterfaceEntry 2 }
+
+f3VrrpTrackingL3InterfaceState OBJECT-TYPE
+    SYNTAX      VrrpTrackingState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingL3InterfaceEntry 3 }
+
+f3VrrpTrackingL3InterfaceStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3VrrpTrackingL3InterfaceEntry 4 }
+
+f3VrrpTrackingL3InterfaceRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3VrrpTrackingL3InterfaceRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3VrrpTrackingL3InterfaceRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3VrrpTrackingL3InterfaceRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3VrrpTrackingL3InterfaceEntry 5 }
+
+
+--
+-- VRRP Tracking Bgp Table
+--
+f3VrrpTrackingBgpTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VrrpTrackingBgpEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for VRRP Tracking Bgp."
+   ::= { f3VrrpConfigObjects 4 }
+
+f3VrrpTrackingBgpEntry OBJECT-TYPE
+    SYNTAX      F3VrrpTrackingBgpEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VrrpTrackingBgpTable."
+    INDEX   { neIndex, shelfIndex, slotIndex,
+            f3L3FlowPointPortIndex, f3L3FlowPointIndex, 
+            f3L3TrafficIPIfIndex, f3VrrpRouterIndex,
+            f3VrrpTrackingBgp }
+
+   ::= { f3VrrpTrackingBgpTable 1 }
+
+F3VrrpTrackingBgpEntry ::= SEQUENCE {
+    f3VrrpTrackingBgp                      VariablePointer,
+    f3VrrpTrackingBgpPriorityDecrement     Unsigned32,
+    f3VrrpTrackingBgpState                 VrrpTrackingState,
+    f3VrrpTrackingBgpStorageType           StorageType,
+    f3VrrpTrackingBgpRowStatus             RowStatus
+}
+
+f3VrrpTrackingBgp OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingBgpEntry 1 }
+
+f3VrrpTrackingBgpPriorityDecrement OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingBgpEntry 2 }
+
+f3VrrpTrackingBgpState OBJECT-TYPE
+    SYNTAX      VrrpTrackingState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingBgpEntry 3 }
+
+f3VrrpTrackingBgpStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3VrrpTrackingBgpEntry 4 }
+
+f3VrrpTrackingBgpRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3VrrpTrackingBgpRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3VrrpTrackingBgpRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3VrrpTrackingBgpRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3VrrpTrackingBgpEntry 5 }
+
+
+--
+-- VRRP Tracking L2 Interface Table
+--
+f3VrrpTrackingL2InterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VrrpTrackingL2InterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for VRRP Tracking L2 Interface."
+   ::= { f3VrrpConfigObjects 5 }
+
+f3VrrpTrackingL2InterfaceEntry OBJECT-TYPE
+    SYNTAX      F3VrrpTrackingL2InterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VrrpTrackingL2InterfaceTable."
+    INDEX   { neIndex, shelfIndex, slotIndex,
+            f3L3FlowPointPortIndex, f3L3FlowPointIndex, 
+            f3L3TrafficIPIfIndex, f3VrrpRouterIndex,
+            f3VrrpTrackingL2Interface }
+
+   ::= { f3VrrpTrackingL2InterfaceTable 1 }
+
+F3VrrpTrackingL2InterfaceEntry ::= SEQUENCE {
+    f3VrrpTrackingL2Interface                      VariablePointer,
+    f3VrrpTrackingL2InterfacePriorityDecrement     Unsigned32,
+    f3VrrpTrackingL2InterfaceState                 VrrpTrackingState,
+    f3VrrpTrackingL2InterfaceStorageType           StorageType,
+    f3VrrpTrackingL2InterfaceRowStatus             RowStatus
+}
+
+f3VrrpTrackingL2Interface OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingL2InterfaceEntry 1 }
+
+f3VrrpTrackingL2InterfacePriorityDecrement OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingL2InterfaceEntry 2 }
+
+f3VrrpTrackingL2InterfaceState OBJECT-TYPE
+    SYNTAX      VrrpTrackingState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3VrrpTrackingL2InterfaceEntry 3 }
+
+f3VrrpTrackingL2InterfaceStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3VrrpTrackingL2InterfaceEntry 4 }
+
+f3VrrpTrackingL2InterfaceRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3VrrpTrackingL2InterfaceRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3VrrpTrackingL2InterfaceRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3VrrpTrackingL2InterfaceRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3VrrpTrackingL2InterfaceEntry 5 }
+
+
+--
+-- VRRP Router Stats Table
+--
+f3VrrpRouterStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VrrpRouterStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for VRRP Router Stats."
+
+   ::= { f3VrrpStatsObjects 1 }
+
+f3VrrpRouterStatsEntry OBJECT-TYPE
+    SYNTAX      F3VrrpRouterStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VrrpRouterStatsTable."
+    AUGMENTS   { f3VrrpRouterEntry }
+   ::= { f3VrrpRouterStatsTable 1 }
+
+F3VrrpRouterStatsEntry ::= SEQUENCE {
+    f3VrrpRouterStatsMasterTransitions                Unsigned32,
+    f3VrrpRouterStatsAdvertisementRcvd                PerfCounter64,
+    f3VrrpRouterStatsAdvertisementSent                PerfCounter64
+}
+
+f3VrrpRouterStatsMasterTransitions OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The total number of times that this virtual router's
+		        state has transitioned to 'master'."
+    ::= { f3VrrpRouterStatsEntry 1 }
+
+f3VrrpRouterStatsAdvertisementRcvd OBJECT-TYPE
+    SYNTAX      PerfCounter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The total number of VRRP advertisements received by
+		        this virtual router."
+    ::= { f3VrrpRouterStatsEntry 2 }
+
+f3VrrpRouterStatsAdvertisementSent OBJECT-TYPE
+    SYNTAX      PerfCounter64
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The total number of VRRP advertisements sent by
+		        this virtual router."
+    ::= { f3VrrpRouterStatsEntry 3 }
+
+
+
+--
+-- Conformance
+--
+f3VrrpCompliances OBJECT IDENTIFIER ::= {f3VrrpConformance 1}
+f3VrrpGroups      OBJECT IDENTIFIER ::= {f3VrrpConformance 2}
+
+f3VrrpCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-VRRP-MIB compilance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3VrrpConfigGroup, f3VrrpStatsGroup
+        }
+    ::= { f3VrrpCompliances 1 }
+
+f3VrrpConfigGroup OBJECT-GROUP
+   OBJECTS {
+      f3VrrpRouterVersion,
+      f3VrrpRouterVrid,
+      f3VrrpRouterPriority,
+      f3VrrpRouterIpVersion,
+      f3VrrpRouterVirtualIpAddr,
+      f3VrrpRouterAdsInterval,
+      f3VrrpRouterPreemptMode,
+      f3VrrpRouterHoldTime,
+      f3VrrpRouterAcceptMode,
+      f3VrrpRouterBfdSession,
+      f3VrrpRouterState,
+      f3VrrpRouterMasterAdsInterval,
+      f3VrrpRouterSkewTime,
+      f3VrrpRouterMasterDownInterval,
+      f3VrrpRouterIsOwner,
+      f3VrrpRouterLastAdsSource,
+      f3VrrpRouterUpDatetime,
+      f3VrrpRouterLastEvent,
+      f3VrrpRouterNewMasterReason,
+      f3VrrpRouterVirtualMacAddr,
+      f3VrrpRouterStorageType,
+      f3VrrpRouterRowStatus,
+      
+      f3VrrpTrackingRoutePrefix,
+      f3VrrpTrackingRoutePriorityDecrement,
+      f3VrrpTrackingRouteState,
+      f3VrrpTrackingRouteStorageType,
+      f3VrrpTrackingRouteRowStatus,
+      
+      f3VrrpTrackingL3InterfaceName,
+      f3VrrpTrackingL3InterfacePriorityDecrement,
+      f3VrrpTrackingL3InterfaceState,
+      f3VrrpTrackingL3InterfaceStorageType,
+      f3VrrpTrackingL3InterfaceRowStatus,
+      
+      f3VrrpTrackingL2Interface,
+      f3VrrpTrackingL2InterfacePriorityDecrement,
+      f3VrrpTrackingL2InterfaceState,
+      f3VrrpTrackingL2InterfaceStorageType,
+      f3VrrpTrackingL2InterfaceRowStatus,
+      
+      f3VrrpTrackingBgp,
+      f3VrrpTrackingBgpPriorityDecrement,
+      f3VrrpTrackingBgpState,
+      f3VrrpTrackingBgpStorageType,
+      f3VrrpTrackingBgpRowStatus
+   }
+   STATUS  current
+   DESCRIPTION
+             "A collection of objects used to manage the Vrrp Configuration objects."
+    ::= { f3VrrpGroups 1 }
+
+f3VrrpStatsGroup OBJECT-GROUP
+   OBJECTS {
+      f3VrrpRouterStatsMasterTransitions,
+      f3VrrpRouterStatsAdvertisementRcvd,
+      f3VrrpRouterStatsAdvertisementSent
+   }
+   STATUS  current
+   DESCRIPTION
+             "A collection of objects used to manage the Vrrp Stats objects."
+    ::= { f3VrrpGroups 2 }
+
+END

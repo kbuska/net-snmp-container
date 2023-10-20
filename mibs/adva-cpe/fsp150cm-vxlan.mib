@@ -1,0 +1,1477 @@
+F3-VXLAN-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32, IpAddress, Counter64
+             FROM SNMPv2-SMI
+    RowStatus, StorageType, TruthValue,DisplayString,
+    VariablePointer, TEXTUAL-CONVENTION, MacAddress,
+    DateAndTime
+             FROM SNMPv2-TC
+    AdminState, OperationalState, SecondaryState,
+    VlanId, VlanPriority,IpVersion,
+    CmPmIntervalType, CmPmBinAction, PerfCounter64
+             FROM  CM-COMMON-MIB
+    Ipv6Address
+             FROM  IPV6-TC
+    neIndex
+             FROM CM-ENTITY-MIB
+    IpMode, IpEntryType
+             FROM  CM-IP-MIB
+    TrafficIpRouteStatus
+             FROM F3-L3-MIB
+    fsp150cm
+             FROM  ADVA-MIB; 
+
+f3VXLANMIB MODULE-IDENTITY
+    LAST-UPDATED        "201508140000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the Ethernet Service Manager MIB defitinions
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "201508140000Z"
+    DESCRIPTION
+        "
+         Notes from release 201508140000Z." 
+
+    ::= {fsp150cm 45}
+
+-- 
+-- OID definitions
+-- 
+f3VXLANConfigObjects      OBJECT IDENTIFIER ::= {f3VXLANMIB 1}
+f3VXLANPerformance        OBJECT IDENTIFIER ::= {f3VXLANMIB 2}
+f3VXLANNotifications      OBJECT IDENTIFIER ::= {f3VXLANMIB 3}
+f3VXLANConformance        OBJECT IDENTIFIER ::= {f3VXLANMIB 4}
+
+-- 
+-- Textual Conventions 
+-- 
+VtepVxlanMode ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "The vtep vxlan mode."
+    SYNTAX       INTEGER {
+                   notApplicable(0),
+                   multicast(1),
+                   unicast(2)
+                 }
+
+VtepAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "The vtep action."
+    SYNTAX       INTEGER {
+                   notApplicable(0),
+                   retrieveRoute(1),
+                   ping(2),
+                   traceroute(3)
+                 }
+
+VxlanSegmentAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "The vxlan segment action."
+    SYNTAX       INTEGER {
+                   notApplicable(0),
+                   retrieveDMac2DIP(1),
+                   flushDmac2DIP(2)
+                 }
+
+VxlanDmac2DipTableFullAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "The vxlan segment dmac to dip table full action."
+    SYNTAX       INTEGER {
+                   forward(1),
+                   discard(2)
+                 }
+
+--
+-- VXLAN Config Table
+--
+f3VTEPTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VTEPEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3VXLANConfigObjects 1 }
+
+f3VTEPEntry OBJECT-TYPE
+    SYNTAX      F3VTEPEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VTEPTable."
+    INDEX { neIndex, f3VTEPIndex }
+   ::= { f3VTEPTable 1 }
+
+F3VTEPEntry ::= SEQUENCE {
+    f3VTEPIndex                                       Unsigned32,
+    f3VTEPAdminState                                  AdminState,
+    f3VTEPSecondaryState                              SecondaryState,
+    f3VTEPOperationalState                            OperationalState,
+    f3VTEPOuterVlanControl                            TruthValue,
+    f3VTEPOuterVlanEtherType                          Unsigned32,
+    f3VTEPOuterVlanId                                 VlanId,
+    f3VTEPOuterVlanPri                                VlanPriority,
+    f3VTEPInnerVlanControl                            TruthValue,
+    f3VTEPInnerVlanEtherType                          Unsigned32,
+    f3VTEPInnerVlanId                                 VlanId,
+    f3VTEPInnerVlanPri                                VlanPriority,
+    f3VTEPDSCPValue                                   Unsigned32,
+    f3VTEPDestUDPPort                                 Unsigned32,
+    f3VTEPStorageType                                 StorageType,
+    f3VTEPRowStatus                                   RowStatus,
+    f3VTEPAction                                      VtepAction,
+    f3VTEPPingIpv4Destination                         IpAddress,
+    f3VTEPTraceRouteIpv4Destination                   IpAddress,
+    f3VTEPPingResult                                  DisplayString,
+    f3VTEPTraceRouteResult                            DisplayString,
+    f3VTEPAlias                                       DisplayString,
+    f3VTEPVxlanMode                                   VtepVxlanMode
+}
+
+f3VTEPIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object unique identify one VXLAN tunnel end point."
+    ::= { f3VTEPEntry 1 }
+
+f3VTEPAdminState OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify admin state of current VXLAN tunnel end point."
+    ::= { f3VTEPEntry 2 }
+
+f3VTEPSecondaryState OBJECT-TYPE
+    SYNTAX      SecondaryState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object represents the Secondary State of the VXLAN tunnel end point."
+    ::= { f3VTEPEntry 3 }
+
+f3VTEPOperationalState OBJECT-TYPE
+    SYNTAX      OperationalState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object represents the Operational State of the VXLAN tunnel end point."
+    ::= { f3VTEPEntry 4 }
+
+f3VTEPOuterVlanControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify outer vlan whether enabled"
+    ::= { f3VTEPEntry 5 }
+
+f3VTEPOuterVlanEtherType OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify outer vlan ether type value."
+    ::= { f3VTEPEntry 6 }
+
+f3VTEPOuterVlanId OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify outer vlanId."
+    ::= { f3VTEPEntry 7 }
+
+f3VTEPOuterVlanPri OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify outer vlan priority."
+    ::= { f3VTEPEntry 8 }
+
+f3VTEPInnerVlanControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify inner vlan control."
+    ::= { f3VTEPEntry 9 }
+
+f3VTEPInnerVlanEtherType OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify inner vlan ether type value."
+    ::= { f3VTEPEntry 10 }
+
+f3VTEPInnerVlanId OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify inner vlanId."
+    ::= { f3VTEPEntry 11 }
+
+f3VTEPInnerVlanPri OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify inner vlan priority."
+    ::= { f3VTEPEntry 12 }
+
+f3VTEPDSCPValue OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..63)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify DSCP value."
+    ::= { f3VTEPEntry 13 }
+
+f3VTEPDestUDPPort OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify destination UDP port value."
+    ::= { f3VTEPEntry 14 }
+
+f3VTEPStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3VTEPEntry 15 }
+
+f3VTEPRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3VTEPRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3VTEPRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3VTEPRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3VTEPEntry 16 }
+
+f3VTEPAction OBJECT-TYPE
+    SYNTAX      VtepAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The VTEP action, includes retrieve route.
+           Note: before get data from f3VTEPIpRouteTable, need to set this action firstly "
+    ::= { f3VTEPEntry 17 }
+
+f3VTEPPingIpv4Destination OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ping destination."
+    ::= { f3VTEPEntry 18 }
+
+f3VTEPTraceRouteIpv4Destination OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The trace route action destination."
+    ::= { f3VTEPEntry 19 }
+
+f3VTEPPingResult OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The ping result."
+    ::= { f3VTEPEntry 20 }
+
+f3VTEPTraceRouteResult OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The trace route result."
+    ::= { f3VTEPEntry 21 }
+
+f3VTEPAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The vtep alias."
+    ::= { f3VTEPEntry 22 }
+
+f3VTEPVxlanMode OBJECT-TYPE
+    SYNTAX      VtepVxlanMode
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The vtep vxlan mode."
+    ::= { f3VTEPEntry 23 }
+
+
+--
+-- VXLAN Config Table
+--
+f3VTEPIpInterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VTEPIpInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3VXLANConfigObjects 2 }
+
+f3VTEPIpInterfaceEntry OBJECT-TYPE
+    SYNTAX      F3VTEPIpInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VTEPIpInterfaceTable."
+    INDEX { neIndex, f3VTEPIndex, f3VTEPIpIfIndex }
+   ::= { f3VTEPIpInterfaceTable 1 }
+
+F3VTEPIpInterfaceEntry ::= SEQUENCE {
+    f3VTEPIpIfIndex                                       Unsigned32,
+    f3VTEPIpIfAdminState                                  AdminState,
+    f3VTEPIpIfSecondaryState                              SecondaryState,
+    f3VTEPIpIfOperationalState                            OperationalState,
+    f3VTEPIpIfName                                        DisplayString,
+    f3VTEPIpIfMTU                                         Unsigned32,
+    f3VTEPIpIfIpAddress                                   IpAddress,
+    f3VTEPIpIfIpMask                                      IpAddress,
+    f3VTEPIpIfDhcpControl                                 TruthValue,
+    f3VTEPIpIfAssociatedPort                              VariablePointer,
+    f3VTEPIpIfUnnumberedControl                           TruthValue,
+    f3VTEPIpIfBorrowedInterface                           DisplayString,
+    f3VTEPIpIfStorageType                                 StorageType,
+    f3VTEPIpIfRowStatus                                   RowStatus
+}
+
+f3VTEPIpIfIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object unique identify one IP interface."
+    ::= { f3VTEPIpInterfaceEntry 1 }
+
+f3VTEPIpIfAdminState OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify admin state."
+    ::= { f3VTEPIpInterfaceEntry 2 }
+
+f3VTEPIpIfSecondaryState OBJECT-TYPE
+    SYNTAX      SecondaryState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object represents the Secondary State."
+    ::= { f3VTEPIpInterfaceEntry 3 }
+
+f3VTEPIpIfOperationalState OBJECT-TYPE
+    SYNTAX      OperationalState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object represents the Operational State."
+    ::= { f3VTEPIpInterfaceEntry 4 }
+
+f3VTEPIpIfName OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(1..15))
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface name."
+    ::= { f3VTEPIpInterfaceEntry 5 }
+
+f3VTEPIpIfMTU OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface MTU."
+    ::= { f3VTEPIpInterfaceEntry 6 }
+
+f3VTEPIpIfIpAddress OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface Ip address."
+    ::= { f3VTEPIpInterfaceEntry 7 }
+
+f3VTEPIpIfIpMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface Ip address mask."
+    ::= { f3VTEPIpInterfaceEntry 8 }
+
+f3VTEPIpIfDhcpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface DHCP whether enabled."
+    ::= { f3VTEPIpInterfaceEntry 9 }
+
+f3VTEPIpIfAssociatedPort OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface associated port."
+    ::= { f3VTEPIpInterfaceEntry 10 }
+
+f3VTEPIpIfUnnumberedControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface whether is numbered."
+    ::= { f3VTEPIpInterfaceEntry 11 }
+
+f3VTEPIpIfBorrowedInterface OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface name whose IP address 
+           is borrrowed from currect object."
+    ::= { f3VTEPIpInterfaceEntry 12 }
+
+f3VTEPIpIfStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3VTEPIpInterfaceEntry 13 }
+
+f3VTEPIpIfRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3VTEPIpIfRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3VTEPIpIfRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3VTEPIpIfRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3VTEPIpInterfaceEntry 14 }
+
+
+--
+-- VXLAN Config Table
+--
+f3VTEPIpRouteTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VTEPIpRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3VXLANConfigObjects 3 }
+
+f3VTEPIpRouteEntry OBJECT-TYPE
+    SYNTAX      F3VTEPIpRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VTEPIpRouteTable."
+    INDEX { neIndex, f3VTEPIndex, f3VTEPIpRouteDestination, f3VTEPIpRouteMask,
+            f3VTEPIpRouteGateWay, f3VTEPIpRouteInterface }
+   ::= { f3VTEPIpRouteTable 1 }
+
+F3VTEPIpRouteEntry ::= SEQUENCE {
+    f3VTEPIpRouteDestination                           IpAddress,
+    f3VTEPIpRouteMask                                  IpAddress,
+    f3VTEPIpRouteGateWay                               IpAddress,
+    f3VTEPIpRouteInterface                             DisplayString,
+    f3VTEPIpRouteStatus                                TrafficIpRouteStatus,
+    f3VTEPIpRouteMetric                                Integer32,
+    f3VTEPIpRouteAdvertise                             TruthValue,
+    f3VTEPIpRouteBfdSession                            VariablePointer,
+    f3VTEPIpRouteStorageType                           StorageType,
+    f3VTEPIpRouteRowStatus                             RowStatus,
+    f3VTEPIpRouteType                                  IpEntryType
+}
+
+f3VTEPIpRouteDestination OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the route's destination ip."
+    ::= { f3VTEPIpRouteEntry 1 }
+
+f3VTEPIpRouteMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the route's destination ip mask."
+    ::= { f3VTEPIpRouteEntry 2 }
+
+f3VTEPIpRouteGateWay OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the route's gateway."
+    ::= { f3VTEPIpRouteEntry 3 }
+
+f3VTEPIpRouteInterface OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(1..15))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify IP interface name."
+    ::= { f3VTEPIpRouteEntry 4 }
+
+f3VTEPIpRouteStatus OBJECT-TYPE
+    SYNTAX      TrafficIpRouteStatus
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object describes the route status."
+    ::= { f3VTEPIpRouteEntry 5 }
+
+f3VTEPIpRouteMetric OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object describes the route metric."
+    ::= { f3VTEPIpRouteEntry 6 }
+
+f3VTEPIpRouteAdvertise OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object describes the route whether advertise."
+    ::= { f3VTEPIpRouteEntry 7 }
+
+f3VTEPIpRouteBfdSession OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object describes the route status monitor by which bfd session."
+    ::= { f3VTEPIpRouteEntry 8 }
+
+f3VTEPIpRouteStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3VTEPIpRouteEntry 9 }
+
+f3VTEPIpRouteRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3VTEPIpRouteRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3VTEPIpRouteRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3VTEPIpRouteRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3VTEPIpRouteEntry 10 }
+
+f3VTEPIpRouteType OBJECT-TYPE
+    SYNTAX      IpEntryType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object describes the route type static or dynamic."
+    ::= { f3VTEPIpRouteEntry 11 }
+
+
+--
+-- VXLAN Config Table
+--
+f3VXLANSegmentTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VXLANSegmentEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3VXLANConfigObjects 4 }
+
+f3VXLANSegmentEntry OBJECT-TYPE
+    SYNTAX      F3VXLANSegmentEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VXLANSegmentTable."
+    INDEX { neIndex, f3VTEPIndex, f3VXLANSegmentIndex }
+   ::= { f3VXLANSegmentTable 1 }
+
+F3VXLANSegmentEntry ::= SEQUENCE {
+    f3VXLANSegmentIndex                                Integer32,
+    f3VXLANSegmentAdminState                           AdminState,
+    f3VXLANSegmentSecondaryState                       SecondaryState,
+    f3VXLANSegmentOperationalState                     OperationalState,
+    f3VXLANSegmentVNI                                  Unsigned32,
+    f3VXLANSegmentEncapOuterTagControl                 TruthValue,
+    f3VXLANSegmentEncapInnerTagControl                 TruthValue,
+    f3VXLANSegmentEncapDSCPMapControl                  TruthValue,
+    f3VXLANSegmentMaxDmac2DIPEntry                     Integer32,
+    f3VXLANSegmentDmac2DIPAgingTime                    Integer32,
+    f3VXLANSegmentRemoteVTEP                           IpAddress,
+    f3VXLANSegmentMultiCastGroup                       IpAddress,
+    f3VXLANStripCEVlanControl                          TruthValue,
+    f3VXLANSegmentStorageType                          StorageType,
+    f3VXLANSegmentRowStatus                            RowStatus,
+    f3VXLANSegmentAction                               VxlanSegmentAction,
+    f3VXLANSegmentAlias                                DisplayString,
+    f3VXLANSegmentDmac2DipTableFullAction              VxlanDmac2DipTableFullAction
+}
+
+f3VXLANSegmentIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object specify the VXLAN segment index."
+    ::= { f3VXLANSegmentEntry 1 }
+
+f3VXLANSegmentAdminState OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the admin state."
+    ::= { f3VXLANSegmentEntry 2 }
+
+f3VXLANSegmentSecondaryState OBJECT-TYPE
+    SYNTAX      SecondaryState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the secondary state."
+    ::= { f3VXLANSegmentEntry 3 }
+
+f3VXLANSegmentOperationalState OBJECT-TYPE
+    SYNTAX      OperationalState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the operational state."
+    ::= { f3VXLANSegmentEntry 4 }
+
+f3VXLANSegmentVNI OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the VXLAN network identifier."
+    ::= { f3VXLANSegmentEntry 5 }
+
+f3VXLANSegmentEncapOuterTagControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify whether rewrite encapsulation outer tag
+           priority from CoS mapping."
+    ::= { f3VXLANSegmentEntry 6 }
+
+f3VXLANSegmentEncapInnerTagControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify whether rewrite encapsulation Inner tag
+           priority from CoS mapping."
+    ::= { f3VXLANSegmentEntry 7 }
+
+f3VXLANSegmentEncapDSCPMapControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify whether rewrite encapsulation DSCP value
+           priority from CoS mapping."
+    ::= { f3VXLANSegmentEntry 8 }
+
+f3VXLANSegmentMaxDmac2DIPEntry OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify max items of Dmac to DIP entry."
+    ::= { f3VXLANSegmentEntry 9 }
+
+f3VXLANSegmentDmac2DIPAgingTime OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify aging timer of Dmac to DIP entry item."
+    ::= { f3VXLANSegmentEntry 10 }
+
+f3VXLANSegmentRemoteVTEP OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify remote VTEP Ip."
+    ::= { f3VXLANSegmentEntry 11 }
+
+f3VXLANSegmentMultiCastGroup OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify multicast address."
+    ::= { f3VXLANSegmentEntry 12 }
+
+f3VXLANStripCEVlanControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify strip customer virtual LAN whether enabled."
+    ::= { f3VXLANSegmentEntry 13 }
+
+f3VXLANSegmentStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3VXLANSegmentEntry 14 }
+
+f3VXLANSegmentRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3VXLANSegmentRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3VXLANSegmentRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3VXLANSegmentRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3VXLANSegmentEntry 15 }
+
+f3VXLANSegmentAction OBJECT-TYPE
+    SYNTAX      VxlanSegmentAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The vxlan segment action, includes retrieve route.
+           Note: before get data from f3VXLANDMac2DIPTable, need to set this action firstly "
+    ::= { f3VXLANSegmentEntry 16 }
+
+f3VXLANSegmentAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The segement alias"
+    ::= { f3VXLANSegmentEntry 17 }
+
+f3VXLANSegmentDmac2DipTableFullAction OBJECT-TYPE
+    SYNTAX      VxlanDmac2DipTableFullAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The segement dmac to dip table full action"
+    ::= { f3VXLANSegmentEntry 18 }
+
+--
+-- VXLAN Config Table
+--
+f3VXLANDMac2DIPTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VXLANDMac2DIPEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3VXLANConfigObjects 5 }
+
+f3VXLANDMac2DIPEntry OBJECT-TYPE
+    SYNTAX      F3VXLANDMac2DIPEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VXLANDMAC2DIPTable."
+    INDEX { neIndex, f3VTEPIndex, f3VXLANSegmentIndex, f3VXLANDMac2DIPEntryInnerDMac }
+   ::= { f3VXLANDMac2DIPTable 1 }
+
+F3VXLANDMac2DIPEntry ::= SEQUENCE {
+    f3VXLANDMac2DIPEntryInnerDMac                           MacAddress,
+    f3VXLANDMac2DIPEntryOuterDIP                            IpAddress,
+    f3VXLANDMac2DIPEntryType                                IpEntryType,
+    f3VXLANDMac2DIPAgingTime                                Unsigned32,
+    f3VXLANDMac2DIPEntryStorageType                         StorageType,
+    f3VXLANDMac2DIPEntryRowStatus                           RowStatus
+}
+
+f3VXLANDMac2DIPEntryInnerDMac OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object specify the inner mac address."
+    ::= { f3VXLANDMac2DIPEntry 1 }
+
+f3VXLANDMac2DIPEntryOuterDIP OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the destination ip."
+    ::= { f3VXLANDMac2DIPEntry 2 }
+
+f3VXLANDMac2DIPEntryType OBJECT-TYPE
+    SYNTAX      IpEntryType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the entry type."
+    ::= { f3VXLANDMac2DIPEntry 3 }
+
+f3VXLANDMac2DIPAgingTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify aging time."
+    ::= { f3VXLANDMac2DIPEntry 4 }
+
+f3VXLANDMac2DIPEntryStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3VXLANDMac2DIPEntry 5 }
+
+f3VXLANDMac2DIPEntryRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3VXLANDMac2DIPEntryRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3VXLANDMac2DIPEntryRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3VXLANDMac2DIPEntryRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3VXLANDMac2DIPEntry 6 }
+
+--
+-- VXLAN Config Table
+--
+f3VXLANDynamicDMac2DIPTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VXLANDynamicDMac2DIPEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only.
+         Must set f3VXLANSegmentAction as retrieveDMac2DIP(1) before get data from this table."
+   ::= { f3VXLANConfigObjects 6 }
+
+f3VXLANDynamicDMac2DIPEntry OBJECT-TYPE
+    SYNTAX      F3VXLANDynamicDMac2DIPEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3VXLANDynamicDMAC2DIPTable."
+    INDEX { neIndex, f3VTEPIndex, f3VXLANSegmentIndex, f3VXLANDynamicDMac2DIPEntryInnerDMac }
+   ::= { f3VXLANDynamicDMac2DIPTable 1 }
+
+F3VXLANDynamicDMac2DIPEntry ::= SEQUENCE {
+    f3VXLANDynamicDMac2DIPEntryInnerDMac                           MacAddress,
+    f3VXLANDynamicDMac2DIPEntryOuterDIP                            IpAddress,
+    f3VXLANDynamicDMac2DIPEntryType                                IpEntryType,
+    f3VXLANDynamicDMac2DIPAgingTime                                Unsigned32,
+    f3VXLANDynamicDMac2DIPEntryStorageType                         StorageType,
+    f3VXLANDynamicDMac2DIPEntryRowStatus                           RowStatus
+}
+
+f3VXLANDynamicDMac2DIPEntryInnerDMac OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object specify the inner mac address."
+    ::= { f3VXLANDynamicDMac2DIPEntry 1 }
+
+f3VXLANDynamicDMac2DIPEntryOuterDIP OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the destination ip."
+    ::= { f3VXLANDynamicDMac2DIPEntry 2 }
+
+f3VXLANDynamicDMac2DIPEntryType OBJECT-TYPE
+    SYNTAX      IpEntryType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify the entry type."
+    ::= { f3VXLANDynamicDMac2DIPEntry 3 }
+
+f3VXLANDynamicDMac2DIPAgingTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "This object specify aging time."
+    ::= { f3VXLANDynamicDMac2DIPEntry 4 }
+
+f3VXLANDynamicDMac2DIPEntryStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3VXLANDynamicDMac2DIPEntry 5 }
+
+f3VXLANDynamicDMac2DIPEntryRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3VXLANDynamicDMac2DIPEntryRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3VXLANDynamicDMac2DIPEntryRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3VXLANDynamicDMac2DIPEntryRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3VXLANDynamicDMac2DIPEntry 6 }
+
+
+--
+-- vxlan segment Current Statistics Table
+--
+f3VXLANSegmentStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VXLANSegmentStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of VXLAN Segment related statistics.  
+             These reflect the current data."
+    ::= { f3VXLANPerformance 1 }
+
+f3VXLANSegmentStatsEntry OBJECT-TYPE
+    SYNTAX      F3VXLANSegmentStatsEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3VXLANSegmentStatsTable.
+             Entries exist in this table for each VXLAN Segment."
+    INDEX { neIndex, f3VTEPIndex, f3VXLANSegmentIndex, f3VXLANSegmentStatsIndex }
+    ::= { f3VXLANSegmentStatsTable 1 }
+
+F3VXLANSegmentStatsEntry ::= SEQUENCE {
+    f3VXLANSegmentStatsIndex                   Integer32,
+    f3VXLANSegmentStatsIntervalType            CmPmIntervalType,
+    f3VXLANSegmentStatsValid                   TruthValue,
+    f3VXLANSegmentStatsAction                  CmPmBinAction,
+    f3VXLANSegmentStatsTtlEqual0Drop           PerfCounter64,
+    f3VXLANSegmentStatsNoRouteDrop             PerfCounter64,
+    f3VXLANSegmentStatsTaggedDrop              PerfCounter64,
+    f3VXLANSegmentStatsDestIpMismatchDrop      PerfCounter64,
+    f3VXLANSegmentStatsFragmentedDrop          PerfCounter64,
+    f3VXLANSegmentStatsDmac2DipTableFullDrop   PerfCounter64
+}
+
+f3VXLANSegmentStatsIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this vxlan segement statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3VXLANSegmentStatsEntry 1 }
+
+f3VXLANSegmentStatsIntervalType OBJECT-TYPE
+    SYNTAX      CmPmIntervalType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Interval over which Performance Monitoring data is collected."
+    ::= { f3VXLANSegmentStatsEntry 2 }
+
+f3VXLANSegmentStatsValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3VXLANSegmentStatsEntry 3 }
+
+f3VXLANSegmentStatsAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3VXLANSegmentStatsEntry 4 }
+
+f3VXLANSegmentStatsTtlEqual0Drop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets TTL equal to 0."
+     ::= { f3VXLANSegmentStatsEntry 5 }
+
+f3VXLANSegmentStatsNoRouteDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to no route."
+     ::= { f3VXLANSegmentStatsEntry 6 }
+
+f3VXLANSegmentStatsTaggedDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to tagged."
+     ::= { f3VXLANSegmentStatsEntry 7 }
+
+f3VXLANSegmentStatsDestIpMismatchDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to destination ip mismatch."
+     ::= { f3VXLANSegmentStatsEntry 8 }
+
+f3VXLANSegmentStatsFragmentedDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to fragmented."
+     ::= { f3VXLANSegmentStatsEntry 9 }
+
+f3VXLANSegmentStatsDmac2DipTableFullDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to dmac to dip talbe full."
+     ::= { f3VXLANSegmentStatsEntry 10 }
+
+--
+-- VXLAN Segement history Statistics Table
+--
+f3VXLANSegmentHistoryTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VXLANSegmentHistoryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of VXLAN Segment related history statistics.  
+             These reflect the history data."
+    ::= { f3VXLANPerformance 2 }
+
+f3VXLANSegmentHistoryEntry OBJECT-TYPE
+    SYNTAX      F3VXLANSegmentHistoryEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3VXLANSegmentHistoryTable.
+             Entries exist in this table for each L3 acl rule."
+    INDEX { neIndex, f3VTEPIndex, f3VXLANSegmentIndex,
+            f3VXLANSegmentStatsIndex, f3VXLANSegmentHistoryIndex }
+    ::= { f3VXLANSegmentHistoryTable 1 }
+
+F3VXLANSegmentHistoryEntry ::= SEQUENCE {
+    f3VXLANSegmentHistoryIndex                 Integer32,
+    f3VXLANSegmentHistoryTime                  DateAndTime,
+    f3VXLANSegmentHistoryValid                 TruthValue,
+    f3VXLANSegmentHistoryAction                CmPmBinAction,
+    f3VXLANSegmentHistoryTtlEqual0Drop         PerfCounter64,
+    f3VXLANSegmentHistoryNoRouteDrop           PerfCounter64,
+    f3VXLANSegmentHistoryTaggedDrop            PerfCounter64,
+    f3VXLANSegmentHistoryDestIpMismatchDrop    PerfCounter64,
+    f3VXLANSegmentHistoryFragmentedDrop        PerfCounter64,
+    f3VXLANSegmentHistoryDmac2DipTableFullDrop PerfCounter64
+}
+
+f3VXLANSegmentHistoryIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this vxlan segment statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3VXLANSegmentHistoryEntry 1 }
+
+f3VXLANSegmentHistoryTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the time of history bin creation." 
+    ::= { f3VXLANSegmentHistoryEntry 2 }
+
+f3VXLANSegmentHistoryValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3VXLANSegmentHistoryEntry 3 }
+
+f3VXLANSegmentHistoryAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3VXLANSegmentHistoryEntry 4 }
+
+f3VXLANSegmentHistoryTtlEqual0Drop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets TTL equal to 0."
+     ::= { f3VXLANSegmentHistoryEntry 5 }
+
+f3VXLANSegmentHistoryNoRouteDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to no route."
+     ::= { f3VXLANSegmentHistoryEntry 6 }
+
+f3VXLANSegmentHistoryTaggedDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to tagged."
+     ::= { f3VXLANSegmentHistoryEntry 7 }
+
+f3VXLANSegmentHistoryDestIpMismatchDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to destination ip mismatch."
+     ::= { f3VXLANSegmentHistoryEntry 8 }
+
+f3VXLANSegmentHistoryFragmentedDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to fragmented."
+     ::= { f3VXLANSegmentHistoryEntry 9 }
+
+f3VXLANSegmentHistoryDmac2DipTableFullDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of dropped packets due to dmac to dip table full."
+     ::= { f3VXLANSegmentHistoryEntry 10 }
+
+--
+-- VXLAN Segment Threshold Table
+--
+f3VXLANSegmentThresholdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VXLANSegmentThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A table of entries that allow manageability of VXLAN Segment Thresholds."
+    ::= { f3VXLANPerformance 3 }
+
+f3VXLANSegmentThresholdEntry OBJECT-TYPE
+    SYNTAX      F3VXLANSegmentThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3VXLANSegmentThresholdTable."
+    INDEX { neIndex,f3VTEPIndex, f3VXLANSegmentIndex,
+            f3VXLANSegmentStatsIndex, f3VXLANSegmentThresholdIndex }
+    ::= { f3VXLANSegmentThresholdTable 1 }
+
+F3VXLANSegmentThresholdEntry ::= SEQUENCE {
+    f3VXLANSegmentThresholdIndex       Integer32,
+    f3VXLANSegmentThresholdInterval    CmPmIntervalType,
+    f3VXLANSegmentThresholdVariable    VariablePointer,
+    f3VXLANSegmentThresholdValueLo     Unsigned32,
+    f3VXLANSegmentThresholdValueHi     Unsigned32,
+    f3VXLANSegmentThresholdMonValue    Counter64
+}
+
+f3VXLANSegmentThresholdIndex OBJECT-TYPE
+    SYNTAX     Integer32 (1..65535)
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "An index that uniquely identifies an entry in the
+        f3EoMplsPwThresholdTable."
+    ::= { f3VXLANSegmentThresholdEntry 1 }
+
+f3VXLANSegmentThresholdInterval OBJECT-TYPE
+    SYNTAX     CmPmIntervalType
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The interval over which monitored value is
+        sampled and compared with the specified threshold."
+    ::= { f3VXLANSegmentThresholdEntry 2 }
+
+f3VXLANSegmentThresholdVariable OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The object identifier of the particular variable to be
+        sampled."
+    ::= { f3VXLANSegmentThresholdEntry 3 }
+
+f3VXLANSegmentThresholdValueLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Lower 32 bits of the threshold value."
+    ::= { f3VXLANSegmentThresholdEntry 4 }
+
+f3VXLANSegmentThresholdValueHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Higher 32 bits of the threshold value."
+    ::= { f3VXLANSegmentThresholdEntry 5 }
+
+f3VXLANSegmentThresholdMonValue OBJECT-TYPE
+    SYNTAX     Counter64
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Monitored value corresponding to f3VXLANSementThresholdVariable."
+    ::= { f3VXLANSegmentThresholdEntry 6 }
+
+---
+---Notifications
+---
+f3VXLANSegmentThresholdCrossingAlert NOTIFICATION-TYPE
+    OBJECTS {
+                f3VXLANSegmentThresholdIndex,       
+                f3VXLANSegmentThresholdInterval,
+                f3VXLANSegmentThresholdVariable,
+                f3VXLANSegmentThresholdValueLo,
+                f3VXLANSegmentThresholdValueHi,
+                f3VXLANSegmentThresholdMonValue
+            }
+    STATUS  current
+    DESCRIPTION
+            "This trap is sent each time a threshold on a PM condition
+             on an vxlan segment is crossed."
+  ::= { f3VXLANNotifications 1 }
+
+--
+-- Conformance
+--
+f3VXLANCompliances OBJECT IDENTIFIER ::= {f3VXLANConformance 1}
+f3VXLANGroups      OBJECT IDENTIFIER ::= {f3VXLANConformance 2}
+
+f3VXLANCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-VXLAN-MIB compilance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3VXLANConfigGroup
+        }
+    ::= { f3VXLANCompliances 1 }
+
+f3VXLANConfigGroup OBJECT-GROUP
+   OBJECTS {
+    f3VTEPIndex,
+    f3VTEPAdminState,
+    f3VTEPSecondaryState,
+    f3VTEPOperationalState,
+    f3VTEPOuterVlanControl,
+    f3VTEPOuterVlanEtherType,
+    f3VTEPOuterVlanId,
+    f3VTEPOuterVlanPri,
+    f3VTEPInnerVlanControl,
+    f3VTEPInnerVlanEtherType,
+    f3VTEPInnerVlanId,
+    f3VTEPInnerVlanPri,
+    f3VTEPDSCPValue,
+    f3VTEPDestUDPPort,
+    f3VTEPStorageType,
+    f3VTEPRowStatus,
+    f3VTEPAction,
+    f3VTEPPingIpv4Destination,
+    f3VTEPTraceRouteIpv4Destination,
+    f3VTEPPingResult,
+    f3VTEPTraceRouteResult,
+    f3VTEPAlias,
+    f3VTEPVxlanMode,
+    
+    f3VTEPIpIfIndex,
+    f3VTEPIpIfAdminState,
+    f3VTEPIpIfSecondaryState,
+    f3VTEPIpIfOperationalState,
+    f3VTEPIpIfName,
+    f3VTEPIpIfMTU,
+    f3VTEPIpIfIpAddress,
+    f3VTEPIpIfIpMask,
+    f3VTEPIpIfDhcpControl,
+    f3VTEPIpIfAssociatedPort,
+    f3VTEPIpIfBorrowedInterface,
+    f3VTEPIpIfStorageType,
+    f3VTEPIpIfRowStatus,
+    f3VTEPIpRouteDestination,
+    f3VTEPIpRouteMask,
+    f3VTEPIpRouteGateWay,
+    f3VTEPIpRouteInterface,
+    f3VTEPIpRouteStatus,
+    f3VTEPIpRouteMetric,
+    f3VTEPIpRouteAdvertise,
+    f3VTEPIpRouteBfdSession,
+    f3VTEPIpRouteStorageType,
+    f3VTEPIpRouteRowStatus,
+    
+    f3VXLANSegmentIndex,
+    f3VXLANSegmentAdminState,
+    f3VXLANSegmentSecondaryState,
+    f3VXLANSegmentOperationalState,
+    f3VXLANSegmentVNI,
+    f3VXLANSegmentEncapOuterTagControl,
+    f3VXLANSegmentEncapInnerTagControl,
+    f3VXLANSegmentEncapDSCPMapControl,
+    f3VXLANSegmentMaxDmac2DIPEntry,
+    f3VXLANSegmentDmac2DIPAgingTime,
+    f3VXLANSegmentRemoteVTEP,
+    f3VXLANSegmentMultiCastGroup,
+    f3VXLANSegmentStorageType,
+    f3VXLANSegmentRowStatus,
+    
+    f3VXLANDMac2DIPEntryInnerDMac,
+    f3VXLANDMac2DIPEntryOuterDIP,
+    f3VXLANDMac2DIPEntryType,
+    f3VXLANDMac2DIPEntryStorageType,
+    f3VXLANDMac2DIPEntryRowStatus
+    
+   }
+   STATUS  current
+   DESCRIPTION
+             "A collection of objects used to manage the VXLAN Configuration objects."
+    ::= { f3VXLANGroups 1 }
+
+END

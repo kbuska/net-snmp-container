@@ -1,0 +1,618 @@
+F3-RFC2544-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    Integer32, IpAddress, Unsigned32, Counter64
+             FROM SNMPv2-SMI
+    DateAndTime, DisplayString, TruthValue, RowStatus, StorageType,
+    MacAddress, VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    fsp150cm
+             FROM  ADVA-MIB
+    VlanId, VlanPriority, IpVersion, CmPmBinAction
+             FROM  CM-COMMON-MIB
+    neIndex, shelfIndex, slotIndex, networkElementEntry
+             FROM  CM-ENTITY-MIB
+    F3DisplayString, AdminState, OperationalState, SecondaryState,
+    MepDestinationType
+             FROM  CM-COMMON-MIB
+    EsaProbePktIntervalType, EsaProbePktIntervalType
+             FROM  CM-SA-MIB
+    PolicerColorMode
+             FROM  CM-FACILITY-MIB
+    dot1agCfmMepEntry
+             FROM IEEE8021-CFM-MIB
+    Dot1agCfmMepIdOrZero
+             FROM IEEE8021-CFM-MIB;
+
+f3Rfc2544MIB MODULE-IDENTITY
+    LAST-UPDATED    "202101280000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module has MIB definitons for Service Activation Testing
+             based on Test Methodology defined in RFC 2544. These definitions
+             are used by the F3 (FSP150CM/CC) product lines.
+             Copyright (C) ADVA."
+    REVISION        "202101280000Z"
+    DESCRIPTION
+        "
+         Notes from release 202002100000Z
+         (1) added new column to f3Rfc2544TestStreamTable
+
+         Notes from release 201309120000Z
+        "
+    ::= {fsp150cm 54}
+
+--
+-- OID definitions
+--
+f3Rfc2544TestObjects        OBJECT IDENTIFIER ::= {f3Rfc2544MIB 1}
+f3Rfc2544TestNotifications  OBJECT IDENTIFIER ::= {f3Rfc2544MIB 2}
+f3Rfc2544TestConformance    OBJECT IDENTIFIER ::= {f3Rfc2544MIB 3}
+
+Rfc2544TestRateGranularity ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Granularity of the rate reduction for each subsequent test trial
+         during the loss rate test of the RFC 2544 test."
+    SYNTAX     INTEGER {
+                   fivePercent (1), 
+                   tenPercent (2)
+               }
+
+Rfc2544TestStatus ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Status of the RFC 2544 test."
+    SYNTAX     INTEGER {
+                   notStarted (1),
+                   inProgress (2), 
+                   completed (3),
+                   stopped (4),
+                   aborted (5)
+               }
+
+Rfc2544TestControlAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Actions defined for RFC 2544 Test Control."
+    SYNTAX     INTEGER {
+                   notApplicable (1), 
+                   start (2), 
+                   stop (3),
+                   optimizeResultsRetrieve (4)
+               }
+
+Rfc2544TestTypeList ::= TEXTUAL-CONVENTION
+    STATUS      current
+    DESCRIPTION
+       "Test types that may be selected for a RFC 2544 test."
+    SYNTAX BITS {
+                   throughput (1), 
+                   latency (2), 
+                   lossRate (3)
+               }
+
+f3Rfc2544TestControlTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3Rfc2544TestControlEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the RFC 2544 Test Control."
+    ::= { f3Rfc2544TestObjects 1 }
+
+f3Rfc2544TestControlEntry  OBJECT-TYPE
+    SYNTAX      F3Rfc2544TestControlEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3Rfc2544TestControlTable."
+    INDEX { neIndex, f3Rfc2544TestControlIndex }
+    ::= { f3Rfc2544TestControlTable 1 }
+
+F3Rfc2544TestControlEntry ::= SEQUENCE {
+    f3Rfc2544TestControlIndex             Integer32,
+    f3Rfc2544TestControlTestPort          VariablePointer,
+    f3Rfc2544TestControlTestTypeList      Rfc2544TestTypeList,
+    f3Rfc2544TestControlTrialDuration     Integer32,
+    f3Rfc2544TestControlRateGranularity   Rfc2544TestRateGranularity,
+    f3Rfc2544TestControlTestExecutionTime Unsigned32,
+    f3Rfc2544TestControlStatus            Rfc2544TestStatus,
+    f3Rfc2544TestControlFrameSizeList     F3DisplayString,
+    f3Rfc2544TestControlAction            Rfc2544TestControlAction
+}
+
+f3Rfc2544TestControlIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The index of RFC 2544 Test Control entry."
+    ::= { f3Rfc2544TestControlEntry 1 }
+
+f3Rfc2544TestControlTestPort OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The port on which the RFC 2544 test is executed."
+    ::= { f3Rfc2544TestControlEntry 2 }
+
+f3Rfc2544TestControlTestTypeList OBJECT-TYPE
+    SYNTAX      Rfc2544TestTypeList
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The list of test types to be executed. If latency is part of the
+            the test type list, throughput MUST be included."
+    ::= { f3Rfc2544TestControlEntry 3 }
+
+f3Rfc2544TestControlTrialDuration OBJECT-TYPE
+    SYNTAX      Integer32 (1..300)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The duration for which the test trial is executed.
+            A test consists of multiple test trials. A trial returns one
+            piece of information, for example, loss rate at a particular
+            input frame rate."
+    DEFVAL { 60 }
+    ::= { f3Rfc2544TestControlEntry 4 }
+
+f3Rfc2544TestControlRateGranularity OBJECT-TYPE
+    SYNTAX      Rfc2544TestRateGranularity
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The rate granularity is used in loss rate test. It is the
+            granularity of the rate reduction for each subsequent test trial
+            during a loss rate test. The first trial shall be run at 100%
+            of the maximum rate for the frame size. The test trials are
+            repeated at rates reduced by rate granularity. For example, if
+            the rate granularity is 10%, then test trials are run at 90%, 80%
+            etc., until there are two successive trials with no frames lost."
+    ::= { f3Rfc2544TestControlEntry 5 }
+
+f3Rfc2544TestControlTestExecutionTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The time the test executed since it was started."
+    ::= { f3Rfc2544TestControlEntry 6 }
+
+f3Rfc2544TestControlStatus OBJECT-TYPE
+    SYNTAX      Rfc2544TestStatus
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The status of the RFC 2544 test."
+    ::= { f3Rfc2544TestControlEntry 7 }
+
+f3Rfc2544TestControlFrameSizeList OBJECT-TYPE
+    SYNTAX      F3DisplayString (SIZE(0..320))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The list of frame sizes for which the test shall be executed.
+            The frames sizes can be in the range 64..MTU. Up to 64 frames
+            sizes can be in the list."
+    ::= { f3Rfc2544TestControlEntry 8 }
+
+f3Rfc2544TestControlAction OBJECT-TYPE
+    SYNTAX      Rfc2544TestControlAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The actions associated with the RFC 2544 test. The test can be
+            started and stopped."
+    ::= { f3Rfc2544TestControlEntry 9 }
+    
+f3Rfc2544TestStreamTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3Rfc2544TestStreamEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the RFC 2544 Test stream."
+    ::= { f3Rfc2544TestObjects 2 }
+
+f3Rfc2544TestStreamEntry  OBJECT-TYPE
+    SYNTAX      F3Rfc2544TestStreamEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3Rfc2544TestStreamTable."
+    INDEX { neIndex, f3Rfc2544TestControlIndex, f3Rfc2544TestStreamIndex }
+    ::= { f3Rfc2544TestStreamTable 1 }
+
+F3Rfc2544TestStreamEntry ::= SEQUENCE {
+    f3Rfc2544TestStreamIndex                Integer32,
+    f3Rfc2544TestStreamDstMac               MacAddress,
+    f3Rfc2544TestStreamOuterVlanEnabled     TruthValue,
+    f3Rfc2544TestStreamOuterVlanEthertype   Integer32,
+    f3Rfc2544TestStreamOuterVlanId          VlanId,
+    f3Rfc2544TestStreamOuterVlanPriority    VlanPriority,
+    f3Rfc2544TestStreamInner1VlanEnabled    TruthValue,
+    f3Rfc2544TestStreamInner1VlanEthertype  Integer32,
+    f3Rfc2544TestStreamInner1VlanId         VlanId,
+    f3Rfc2544TestStreamInner1VlanPriority   VlanPriority,
+    f3Rfc2544TestStreamInner2VlanEnabled    TruthValue,
+    f3Rfc2544TestStreamInner2VlanEthertype  Integer32,
+    f3Rfc2544TestStreamInner2VlanId         VlanId,
+    f3Rfc2544TestStreamInner2VlanPriority   VlanPriority,
+    f3Rfc2544TestStreamIpHeaderEnabled      TruthValue,
+    f3Rfc2544TestStreamIpVersion            IpVersion,
+    f3Rfc2544TestStreamSrcIp                DisplayString,
+    f3Rfc2544TestStreamDstIp                DisplayString,
+    f3Rfc2544TestStreamIpPriority           Integer32,
+    f3Rfc2544TestStreamStartRate            Unsigned32,
+    f3Rfc2544TestStreamStorageType          StorageType,
+    f3Rfc2544TestStreamRowStatus            RowStatus,
+    f3Rfc2544TestStreamStartRateHi          Unsigned32
+}
+
+f3Rfc2544TestStreamIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The index of RFC 2544 Test Stream entry."
+    ::= { f3Rfc2544TestStreamEntry 1 }
+
+f3Rfc2544TestStreamDstMac OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "Destination MAC Address of the test frames."
+    DEFVAL { '0080EA000001'H }
+    ::= { f3Rfc2544TestStreamEntry 2 }
+
+f3Rfc2544TestStreamOuterVlanEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The control to enable/disable the outer VLAN tag in the test
+            frame. When disabled, the test frames are untagged and when
+            enabled, the test frames have at least one VLAN tag."
+    DEFVAL { false }
+    ::= { f3Rfc2544TestStreamEntry 3 }
+
+f3Rfc2544TestStreamOuterVlanEthertype OBJECT-TYPE
+    SYNTAX      Integer32 (0..65535)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The outer VLAN Tag Ethertype (TPID)."
+    DEFVAL { '8100'H }
+    ::= { f3Rfc2544TestStreamEntry 4 }
+
+f3Rfc2544TestStreamOuterVlanId OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The outer VLAN ID."
+    DEFVAL { 4094 }
+    ::= { f3Rfc2544TestStreamEntry 5 }
+
+f3Rfc2544TestStreamOuterVlanPriority OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The outer VLAN Tag Priority (PCP)."
+    DEFVAL { 1 }
+    ::= { f3Rfc2544TestStreamEntry 6 }
+
+f3Rfc2544TestStreamInner1VlanEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The control to enable/disable the inner1 VLAN tag in the test
+            frame. When disabled, the test frames are single tagged and when
+            enabled, the test frames have at least two VLAN tags."
+    DEFVAL { false }
+    ::= { f3Rfc2544TestStreamEntry 7 }
+
+f3Rfc2544TestStreamInner1VlanEthertype OBJECT-TYPE
+    SYNTAX      Integer32 (0..65535)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The inner1 VLAN Tag Ethertype (TPID)."
+    DEFVAL { '8100'H }
+    ::= { f3Rfc2544TestStreamEntry 8 }
+
+f3Rfc2544TestStreamInner1VlanId OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The inner1 VLAN ID."
+    DEFVAL { 4094 }
+    ::= { f3Rfc2544TestStreamEntry 9 }
+
+f3Rfc2544TestStreamInner1VlanPriority OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The inner1 VLAN Tag Priority (PCP)."
+    DEFVAL { 1 }
+    ::= { f3Rfc2544TestStreamEntry 10 }
+
+f3Rfc2544TestStreamInner2VlanEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The control to enable/disable the inner2 VLAN tag in the test
+            frame. When disabled, the test frames are double tagged and
+            when enabled, the test frames have three VLAN tags."
+    DEFVAL { false }
+    ::= { f3Rfc2544TestStreamEntry 11 }
+
+f3Rfc2544TestStreamInner2VlanEthertype OBJECT-TYPE
+    SYNTAX      Integer32 (0..65535)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The inner2 VLAN Tag Ethertype (TPID)."
+    DEFVAL { '8100'H }
+    ::= { f3Rfc2544TestStreamEntry 12 }
+
+f3Rfc2544TestStreamInner2VlanId OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The inner2 VLAN ID."
+    DEFVAL { 4094 }
+    ::= { f3Rfc2544TestStreamEntry 13 }
+
+f3Rfc2544TestStreamInner2VlanPriority OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The inner2 VLAN Tag Priority (PCP)."
+    DEFVAL { 1 }
+    ::= { f3Rfc2544TestStreamEntry 14 }
+
+f3Rfc2544TestStreamIpHeaderEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The control to enable/disable IP header in the test frame.
+            When disabled, a deafult IP header is generated for test frames
+            and when enabled, the IP header is constructed based on the
+            user configured IP header fields."
+    DEFVAL { false }
+    ::= { f3Rfc2544TestStreamEntry 15 }
+
+f3Rfc2544TestStreamIpVersion OBJECT-TYPE
+    SYNTAX      IpVersion
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The IP Version."
+    DEFVAL { ipv4 }
+    ::= { f3Rfc2544TestStreamEntry 16 }
+
+f3Rfc2544TestStreamSrcIp OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..64))
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The Source IP Address."
+    DEFVAL { "0.0.0.0" }
+    ::= { f3Rfc2544TestStreamEntry 17 }
+
+f3Rfc2544TestStreamDstIp OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..64))
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The Destination IP Address."
+    DEFVAL { "0.0.0.0" }
+    ::= { f3Rfc2544TestStreamEntry 18 }
+
+f3Rfc2544TestStreamIpPriority OBJECT-TYPE
+    SYNTAX      Integer32 (0..63)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           " The IP DSCP Value."
+    DEFVAL { 0 }
+    ::= { f3Rfc2544TestStreamEntry 19 }
+
+f3Rfc2544TestStreamStartRate OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The rate at which all the tests begin. The unit is bps. 
+           This objects represents lower 32 bits of the rate value"   
+    DEFVAL { 64000 }
+    ::= { f3Rfc2544TestStreamEntry 20 }
+
+
+f3Rfc2544TestStreamStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The storage type for this conceptual row.
+            Conceptual rows having the value 'permanent' need not
+            allow write-access to any columnar objects in the row."
+    ::= { f3Rfc2544TestStreamEntry 21 }
+
+f3Rfc2544TestStreamRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The status of this conceptual row."
+    ::= { f3Rfc2544TestStreamEntry 22 }
+
+f3Rfc2544TestStreamStartRateHi OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+          "The rate at which all the tests begin. The unit is bps. 
+           This objects represents higher 32 bits of the rate value"   
+    DEFVAL { 0 }
+    ::= { f3Rfc2544TestStreamEntry 23 }
+
+f3Rfc2544TestResultTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3Rfc2544TestResultEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the RFC 2544 Test Result."
+    ::= { f3Rfc2544TestObjects 3 }
+
+f3Rfc2544TestResultEntry  OBJECT-TYPE
+    SYNTAX      F3Rfc2544TestResultEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3Rfc2544TestResultTable."
+    INDEX { neIndex, f3Rfc2544TestControlIndex, f3Rfc2544TestStreamIndex, f3Rfc2544TestResultFrameSize }
+    ::= { f3Rfc2544TestResultTable 1 }
+
+F3Rfc2544TestResultEntry ::= SEQUENCE {
+    f3Rfc2544TestResultFrameSize          Unsigned32,
+    f3Rfc2544TestResultStartTime          DateAndTime,
+    f3Rfc2544TestResultEndTime            DateAndTime,
+    f3Rfc2544TestResultMaxLatency         Unsigned32,
+    f3Rfc2544TestResultMinLatency         Unsigned32,
+    f3Rfc2544TestResultAverageLatency     Unsigned32,
+    f3Rfc2544TestResultFrameLossRateList  DisplayString,
+    f3Rfc2544TestResultMaxThroughput      Unsigned32
+}
+
+f3Rfc2544TestResultFrameSize OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The frame size for the test. This is a size from the the list
+            of frame sizes configured for the RFC 2544 test."
+    ::= { f3Rfc2544TestResultEntry 1 }
+
+f3Rfc2544TestResultStartTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The test start time."
+    ::= { f3Rfc2544TestResultEntry 2 }
+
+f3Rfc2544TestResultEndTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The test end time."
+    ::= { f3Rfc2544TestResultEntry 3 }
+
+f3Rfc2544TestResultMaxLatency OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The maximum latency for the frame size. The unit is us."
+    ::= { f3Rfc2544TestResultEntry 4 }
+
+f3Rfc2544TestResultMinLatency OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The minimum latency for the frame size. The unit is us."
+    ::= { f3Rfc2544TestResultEntry 5 }
+
+f3Rfc2544TestResultAverageLatency OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The average latency for the frame size. The unit is us."
+    ::= { f3Rfc2544TestResultEntry 6 }
+
+f3Rfc2544TestResultFrameLossRateList OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "List of frame loss rates for different rates based on the rate
+            granularity."
+    ::= { f3Rfc2544TestResultEntry 7 }
+
+f3Rfc2544TestResultMaxThroughput OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The maximum throughput rate for the frame size. The unit is
+            packets per second (pps)."
+    ::= { f3Rfc2544TestResultEntry 8 }
+
+--
+-- Conformance
+--
+f3Rfc2544Compliances OBJECT IDENTIFIER ::= {f3Rfc2544TestConformance 1}
+f3Rfc2544Groups      OBJECT IDENTIFIER ::= {f3Rfc2544TestConformance 2}
+
+f3Rfc2544Compliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3 RFC 2544
+             group."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3Rfc2544Group
+        }
+    ::= { f3Rfc2544Compliances 1 }
+ 
+f3Rfc2544Group OBJECT-GROUP
+    OBJECTS {
+        f3Rfc2544TestControlIndex, f3Rfc2544TestControlTestPort, f3Rfc2544TestControlTestTypeList,
+        f3Rfc2544TestControlTrialDuration, f3Rfc2544TestControlRateGranularity, f3Rfc2544TestControlTestExecutionTime,
+        f3Rfc2544TestControlStatus, f3Rfc2544TestControlFrameSizeList, f3Rfc2544TestControlAction,
+        f3Rfc2544TestStreamIndex, f3Rfc2544TestStreamDstMac, f3Rfc2544TestStreamOuterVlanEnabled, 
+        f3Rfc2544TestStreamOuterVlanId, f3Rfc2544TestStreamOuterVlanPriority, f3Rfc2544TestStreamInner1VlanEnabled, 
+        f3Rfc2544TestStreamInner1VlanId, f3Rfc2544TestStreamInner1VlanPriority, f3Rfc2544TestStreamInner2VlanEnabled, 
+        f3Rfc2544TestStreamInner2VlanId, f3Rfc2544TestStreamInner2VlanPriority, f3Rfc2544TestStreamIpHeaderEnabled, 
+        f3Rfc2544TestStreamIpVersion, f3Rfc2544TestStreamSrcIp, f3Rfc2544TestStreamDstIp, 
+        f3Rfc2544TestStreamIpPriority, f3Rfc2544TestStreamStartRate, f3Rfc2544TestStreamOuterVlanEthertype, 
+        f3Rfc2544TestStreamInner1VlanEthertype, f3Rfc2544TestStreamInner2VlanEthertype, f3Rfc2544TestStreamStorageType, 
+        f3Rfc2544TestStreamRowStatus, f3Rfc2544TestStreamStartRateHi, f3Rfc2544TestResultFrameSize, 
+        f3Rfc2544TestResultStartTime, f3Rfc2544TestResultEndTime, f3Rfc2544TestResultMaxLatency, 
+        f3Rfc2544TestResultMinLatency, f3Rfc2544TestResultAverageLatency, f3Rfc2544TestResultFrameLossRateList, 
+        f3Rfc2544TestResultMaxThroughput
+    }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects used to manage the F3 RFC 2544 functionality."
+    ::= { f3Rfc2544Groups 1 }
+
+END

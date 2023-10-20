@@ -1,0 +1,508 @@
+F3-LTPBEACON-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    Integer32, IpAddress, Unsigned32, Counter64
+             FROM SNMPv2-SMI
+    DateAndTime, DisplayString, TruthValue, RowStatus, StorageType,
+    MacAddress, VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    fsp150cm
+             FROM  ADVA-MIB
+    DHCPCIDType, DHCPHostNameType, DHCPVendorInfoType
+             FROM CM-IP-MIB
+    VlanId, VlanPriority
+             FROM  CM-COMMON-MIB;
+
+f3LtpBeaconMIB MODULE-IDENTITY
+    LAST-UPDATED    "202111280000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module has MIB definitons Ltp Beacon. These definitions
+             are used by the F3 (FSP150CM/CC) product lines.
+             Copyright (C) ADVA."
+    REVISION        "202111280000Z"
+    DESCRIPTION
+        "
+         Notes from release 202111280000Z
+        "
+    ::= {fsp150cm 55}
+
+--
+-- OID definitions
+--
+f3LtpBeaconObjects        OBJECT IDENTIFIER ::= {f3LtpBeaconMIB 1}
+f3LtpBeaconNotifications  OBJECT IDENTIFIER ::= {f3LtpBeaconMIB 2}
+f3LtpBeaconConformance    OBJECT IDENTIFIER ::= {f3LtpBeaconMIB 3}
+
+
+LtpBeaconTxIPAddrType ::= TEXTUAL-CONVENTION
+     STATUS       current
+     DESCRIPTION 
+         "Ltp Beacon Tx IP Address Type."
+     SYNTAX    INTEGER {
+                 dhcp(1),
+                 auto(2),
+                 autoStatic(3),
+                 useLocal(4)
+               }
+
+LtpBeaconRate ::= TEXTUAL-CONVENTION
+     STATUS       current
+     DESCRIPTION 
+         "Ltp Beacon Rate."
+     SYNTAX    INTEGER {
+                 rate3Sec(1),
+                 rate1Min(2),
+                 rate10Min(3),
+                 rate60Min(4)
+               }
+
+LtpBeaconTransmitterAction ::= TEXTUAL-CONVENTION
+     STATUS       current
+     DESCRIPTION 
+         "Ltp Beacon Action."
+     SYNTAX    INTEGER {
+                 notApplicable(0), 
+                 oneShot(1)
+               }
+
+--
+-- FSP150 Ltp Beacon Receiver Table
+--
+f3LtpBeaconReceiverTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LtpBeaconReceiverEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of Ltp Beacon Receiver fsp150 family of products."
+    ::= { f3LtpBeaconObjects 1 }
+
+f3LtpBeaconReceiverEntry  OBJECT-TYPE
+    SYNTAX      F3LtpBeaconReceiverEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3LtpBeaconReceiverTable. Entries can
+            be created/deleted in this table by management application action."
+    INDEX { f3LtpBeaconReceiverIndex }
+    ::= { f3LtpBeaconReceiverTable 1 }
+
+F3LtpBeaconReceiverEntry ::= SEQUENCE {
+    f3LtpBeaconReceiverIndex              Integer32,
+    f3LtpBeaconReceiverPort               VariablePointer,
+    f3LtpBeaconReceiverRecvCtrl           TruthValue,
+    f3LtpBeaconReceiverDomainId           Integer32,
+    f3LtpBeaconReceiverAuthIdMismatch     TruthValue,
+    f3LtpBeaconReceiverSrcMac             MacAddress,
+    f3LtpBeaconReceiverRecPdu             OCTET STRING,
+    f3LtpBeaconReceiverStorageType        StorageType,
+    f3LtpBeaconReceiverRowStatus          RowStatus
+}
+
+f3LtpBeaconReceiverIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..255)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A unique integer index value used to uniquely identify
+             a Ltp Beacon Receiver Entry in the f3LtpBeaconReceiverTable."
+    ::= { f3LtpBeaconReceiverEntry 1 }
+
+f3LtpBeaconReceiverPort OBJECT-TYPE
+    SYNTAX      VariablePointer 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Associated port of Beacon Receiver."
+    ::= { f3LtpBeaconReceiverEntry 2 }
+
+f3LtpBeaconReceiverRecvCtrl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Control reception of beacons."
+    ::= { f3LtpBeaconReceiverEntry 3 }
+
+f3LtpBeaconReceiverDomainId OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Domain ID which shall be matched with the received Beacon PDU."
+    ::= { f3LtpBeaconReceiverEntry 4 }
+
+f3LtpBeaconReceiverAuthIdMismatch OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "When enabled, it tells the receiver to accept beacons even 
+            if the beacon's Domain ID does not match the local domain ID."
+    ::= { f3LtpBeaconReceiverEntry 5 }
+
+f3LtpBeaconReceiverSrcMac OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Source MAC that was received in the last Beacon PDU."
+    ::= { f3LtpBeaconReceiverEntry 6 }
+
+f3LtpBeaconReceiverRecPdu OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE(0..1526))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+       "Last received Beacon PDU in raw format."
+    ::= { f3LtpBeaconReceiverEntry 7 }
+
+f3LtpBeaconReceiverStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3LtpBeaconReceiverEntry 8 }
+
+f3LtpBeaconReceiverRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+             The f3LtpBeaconReceiverRowStatus object may be modified if
+             the associated instance of this object is equal to active(1),
+             notInService(2), or notReady(3)."
+    ::= { f3LtpBeaconReceiverEntry 9 }
+
+--
+-- FSP150 Ltp Beacon Transmitter Table
+--
+f3LtpBeaconTransmitterTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LtpBeaconTransmitterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of Ltp Beacon Transmitter fsp150 family of products."
+    ::= { f3LtpBeaconObjects 2 }
+
+f3LtpBeaconTransmitterEntry  OBJECT-TYPE
+    SYNTAX      F3LtpBeaconTransmitterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3LtpBeaconTransmitterTable. Entries can
+            be created/deleted in this table by management application action."
+    INDEX { f3LtpBeaconTransmitterIndex }
+    ::= { f3LtpBeaconTransmitterTable 1 }
+
+
+F3LtpBeaconTransmitterEntry ::= SEQUENCE {
+    f3LtpBeaconTransmitterIndex                    Integer32,
+    f3LtpBeaconTransmitterName                     DisplayString,       
+    f3LtpBeaconTransmitterPort                     VariablePointer,
+    f3LtpBeaconTransmitterTransmitCtrl             TruthValue, 
+    f3LtpBeaconTransmitterDomainId                 Integer32,
+    f3LtpBeaconTransmitterBeaconRate                 LtpBeaconRate,            
+    f3LtpBeaconTransmitterIpAddrCtrl                 LtpBeaconTxIPAddrType,   
+    f3LtpBeaconTransmitterSTagCtrl                   TruthValue, 
+    f3LtpBeaconTransmitterSTagVlanId                 VlanId,
+    f3LtpBeaconTransmitterSTagVlanPriority           VlanPriority,
+    f3LtpBeaconTransmitterCTagCtrl                   TruthValue,    
+    f3LtpBeaconTransmitterCTagVlanId                 VlanId,
+    f3LtpBeaconTransmitterCTagVlanPriority           VlanPriority,      
+    f3LtpBeaconTransmitterDhcpEnabled                TruthValue,
+    f3LtpBeaconTransmitterDhcpCIDEnabled             TruthValue,
+    f3LtpBeaconTransmitterDhcpCIDType                DHCPCIDType,
+    f3LtpBeaconTransmitterDhcpCID                    OCTET STRING,  
+    f3LtpBeaconTransmitterDhcpClassIdEnabled         TruthValue,
+    f3LtpBeaconTransmitterDhcpHostNameEnabled        TruthValue,
+    f3LtpBeaconTransmitterDhcpHostNameType           DHCPHostNameType,
+    f3LtpBeaconTransmitterDhcpHostName               DisplayString,
+    f3LtpBeaconTransmitterDhcpVendorInfoEnabled      TruthValue,
+    f3LtpBeaconTransmitterDhcpVendorInfoType         DHCPVendorInfoType,
+    f3LtpBeaconTransmitterDhcpVendorInfo             OCTET STRING,
+    f3LtpBeaconTransmitterAction                     LtpBeaconTransmitterAction,
+    f3LtpBeaconTransmitterStorageType                StorageType,
+    f3LtpBeaconTransmitterRowStatus                  RowStatus
+}
+
+
+f3LtpBeaconTransmitterIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..255)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A unique integer index value used to uniquely identify
+             a Ltp Beacon Transmitter Entry in the f3LtpBeaconTransmitterTable."
+    ::= { f3LtpBeaconTransmitterEntry 1 }
+
+
+f3LtpBeaconTransmitterName  OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..64))
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Name of the Beacon Transmitter instance."
+    ::= { f3LtpBeaconTransmitterEntry 2 }
+
+
+f3LtpBeaconTransmitterPort OBJECT-TYPE
+    SYNTAX      VariablePointer 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The associated port of Beacon Transmitter."
+    ::= { f3LtpBeaconTransmitterEntry 3 }
+
+f3LtpBeaconTransmitterTransmitCtrl  OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Enable or Disable transmission of beacons control."
+    ::= { f3LtpBeaconTransmitterEntry 4 }
+
+f3LtpBeaconTransmitterDomainId OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Domain ID of Beacon Transmitter."
+    ::= { f3LtpBeaconTransmitterEntry 5 }
+
+f3LtpBeaconTransmitterBeaconRate  OBJECT-TYPE
+    SYNTAX      LtpBeaconRate 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Interval at which beacons will be sent."
+    ::= { f3LtpBeaconTransmitterEntry 6 }
+
+f3LtpBeaconTransmitterIpAddrCtrl OBJECT-TYPE
+    SYNTAX      LtpBeaconTxIPAddrType 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Tells the receiver, the IP configuration mode that the receiver should use."
+    ::= { f3LtpBeaconTransmitterEntry 7 }
+
+f3LtpBeaconTransmitterSTagCtrl  OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Enable or Disable S-Tag control."
+    ::= { f3LtpBeaconTransmitterEntry 8 }
+
+f3LtpBeaconTransmitterSTagVlanId  OBJECT-TYPE
+    SYNTAX      VlanId 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The S-Tag Vlan Id."
+    ::= { f3LtpBeaconTransmitterEntry 9 }
+
+f3LtpBeaconTransmitterSTagVlanPriority  OBJECT-TYPE
+    SYNTAX      VlanPriority  
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The S-Tag Vlan Priority."
+    ::= { f3LtpBeaconTransmitterEntry 10 }
+
+f3LtpBeaconTransmitterCTagCtrl OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Enable or Disable C-Tag control."
+    ::= { f3LtpBeaconTransmitterEntry 11 }
+
+f3LtpBeaconTransmitterCTagVlanId  OBJECT-TYPE
+    SYNTAX      VlanId 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The C-Tag Vlan Id."
+    ::= { f3LtpBeaconTransmitterEntry 12 }
+
+f3LtpBeaconTransmitterCTagVlanPriority  OBJECT-TYPE
+    SYNTAX   VlanPriority       
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The C-Tag Vlan Priority."
+    ::= { f3LtpBeaconTransmitterEntry 13 }
+
+f3LtpBeaconTransmitterDhcpEnabled  OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      deprecated
+    DESCRIPTION
+            "Enable or Disable dhcp."
+    ::= { f3LtpBeaconTransmitterEntry 14 }
+
+f3LtpBeaconTransmitterDhcpCIDEnabled  OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Enable or Disable dhcp CID."
+    ::= { f3LtpBeaconTransmitterEntry 15 }
+
+f3LtpBeaconTransmitterDhcpCIDType  OBJECT-TYPE
+    SYNTAX      DHCPCIDType 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The dhcp CID yype."
+    ::= { f3LtpBeaconTransmitterEntry 16 }
+
+f3LtpBeaconTransmitterDhcpCID OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..254))
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The CID of dhcp."
+    ::= { f3LtpBeaconTransmitterEntry 17 }
+
+f3LtpBeaconTransmitterDhcpClassIdEnabled  OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Enable or Disable Class ID."
+    ::= { f3LtpBeaconTransmitterEntry 18 }
+
+f3LtpBeaconTransmitterDhcpHostNameEnabled  OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Enable or Disable host name."
+    ::= { f3LtpBeaconTransmitterEntry 19 }
+
+f3LtpBeaconTransmitterDhcpHostNameType  OBJECT-TYPE
+    SYNTAX      DHCPHostNameType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The dhcp host name type."
+    ::= { f3LtpBeaconTransmitterEntry 20 }
+
+f3LtpBeaconTransmitterDhcpHostName  OBJECT-TYPE
+    SYNTAX      DisplayString 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The dhcp host name."
+    ::= { f3LtpBeaconTransmitterEntry 21 }
+
+f3LtpBeaconTransmitterDhcpVendorInfoEnabled  OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "Enable or Disable dhcp vendor info."
+    ::= { f3LtpBeaconTransmitterEntry 22 }
+
+f3LtpBeaconTransmitterDhcpVendorInfoType OBJECT-TYPE
+    SYNTAX      DHCPVendorInfoType 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The dhcp vendor info type."
+    ::= { f3LtpBeaconTransmitterEntry 23 }
+
+f3LtpBeaconTransmitterDhcpVendorInfo  OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(0..248))
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The dhcp vendor info."
+    ::= { f3LtpBeaconTransmitterEntry 24 }
+
+f3LtpBeaconTransmitterAction  OBJECT-TYPE
+    SYNTAX      LtpBeaconTransmitterAction 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The transmitter action."
+    ::= { f3LtpBeaconTransmitterEntry 25 }
+
+f3LtpBeaconTransmitterStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3LtpBeaconTransmitterEntry 26 }
+
+f3LtpBeaconTransmitterRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+             The f3LtpBeaconTransmitterRowStatus object may be modified if
+             the associated instance of this object is equal to active(1),
+             notInService(2), or notReady(3)."
+    ::= { f3LtpBeaconTransmitterEntry 27 }
+
+--
+-- Conformance
+--
+f3LtpBeaconCompliances OBJECT IDENTIFIER ::= {f3LtpBeaconConformance 1}
+f3LtpBeaconGroups      OBJECT IDENTIFIER ::= {f3LtpBeaconConformance 2}
+
+f3LtpBeaconCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3 LTP BEACON
+             group."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3LtpBeaconGroup
+        }
+    ::= { f3LtpBeaconCompliances 1 }
+ 
+f3LtpBeaconGroup OBJECT-GROUP
+    OBJECTS {
+    f3LtpBeaconReceiverIndex, f3LtpBeaconReceiverDomainId, f3LtpBeaconReceiverRecvCtrl,
+    f3LtpBeaconReceiverAuthIdMismatch, f3LtpBeaconReceiverSrcMac,
+    f3LtpBeaconReceiverRecPdu, f3LtpBeaconReceiverPort, f3LtpBeaconReceiverStorageType,
+    f3LtpBeaconReceiverRowStatus, f3LtpBeaconTransmitterIndex, f3LtpBeaconTransmitterDomainId,
+    f3LtpBeaconTransmitterPort,  f3LtpBeaconTransmitterDhcpEnabled,
+    f3LtpBeaconTransmitterDhcpCID,  f3LtpBeaconTransmitterDhcpCIDEnabled, 
+    f3LtpBeaconTransmitterDhcpHostName, f3LtpBeaconTransmitterDhcpHostNameEnabled,
+    f3LtpBeaconTransmitterDhcpCIDType, f3LtpBeaconTransmitterDhcpHostNameType,
+    f3LtpBeaconTransmitterDhcpVendorInfoEnabled, f3LtpBeaconTransmitterDhcpClassIdEnabled,
+    f3LtpBeaconTransmitterDhcpVendorInfoType, f3LtpBeaconTransmitterDhcpVendorInfo,
+    f3LtpBeaconTransmitterName, f3LtpBeaconTransmitterBeaconRate,        
+    f3LtpBeaconTransmitterTransmitCtrl,  f3LtpBeaconTransmitterCTagCtrl, f3LtpBeaconTransmitterSTagCtrl, 
+    f3LtpBeaconTransmitterCTagVlanId, f3LtpBeaconTransmitterCTagVlanPriority,
+    f3LtpBeaconTransmitterSTagVlanId, f3LtpBeaconTransmitterSTagVlanPriority,
+    f3LtpBeaconTransmitterIpAddrCtrl,  f3LtpBeaconTransmitterAction,
+    f3LtpBeaconTransmitterStorageType, f3LtpBeaconTransmitterRowStatus         
+    }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects used to manage the F3 LTP BEACON functionality."
+    ::= { f3LtpBeaconGroups 1 }
+
+END

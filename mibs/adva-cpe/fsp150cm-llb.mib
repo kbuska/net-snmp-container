@@ -1,0 +1,696 @@
+F3-LLB-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32
+             FROM SNMPv2-SMI
+    RowStatus, StorageType, DisplayString, TruthValue, 
+    MacAddress, VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    dot1agCfmMdIndex, dot1agCfmMaIndex, dot1agCfmMepIdentifier,
+    dot1agCfmMepEntry
+             FROM IEEE8021-CFM-MIB
+    fsp150cm
+             FROM  ADVA-MIB
+    VlanId
+             FROM  CM-COMMON-MIB;
+
+f3LLBMIB MODULE-IDENTITY
+    LAST-UPDATED    "201706020000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the MIB definitions for MEF 46 Latching
+             Loopback function used by the FSP150CM and FSP150CC product
+             lines.
+             Copyright (C) ADVA."
+    REVISION        "201706020000Z"
+    DESCRIPTION
+        "Notes from release 201706020000Z," 
+
+    ::= {fsp150cm 49}
+
+
+-- 
+-- OID definitions
+-- 
+f3LlbConfigObjects      OBJECT IDENTIFIER ::= {f3LLBMIB 1}
+f3LlbConformance        OBJECT IDENTIFIER ::= {f3LLBMIB 2}
+
+
+--
+-- Textual Conventions
+--
+
+LlbControllerStateType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "This is the state of the Latching Loopback Controller.
+         
+         init                  -- Controller is in this state before the discovery is initiated.
+         discovery-in-progress -- Controller is in this state while discovery is in progress.
+         discovery-complete    -- Controller is in this state when discovery is complete."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            init (1),
+            discovery-in-progress (2),
+            discovery-complete (3)
+        }
+
+LlbControllerAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "User actions on Latching Loopback Controller.
+         
+         initiate-discovery -- Initiates request to discover Latching Loopback
+                               Responders.  Latching Loopback Controller will
+                               send the Multicast Latching Loopback State 
+                               Request message "
+    SYNTAX   INTEGER {
+            none (0),
+            initiate-discovery (1)
+        }
+
+LlbControllerSessionStateType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "The loopback state on Latching Loopback Session.
+         
+         active     -- Initiates request to activate loopback on the Latching
+                       Loopback Responder. Latching Loopback Controller will
+                       send the Unicast Latching Loopback Activate Request 
+                       message.
+         deactivate -- Initiates request to deactivate loopback on the 
+                       Latching Loopback Responder. Latching Loopback 
+                       Controller will send the Unicast Latching Loopback 
+                       Deactivate Request message."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            active (1),
+            inactive (2)
+        }
+
+LlbControllerSessionRequestType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "The last Latching Loopback Request sent to Loopback Responder.
+         
+         state      -- Request used to query the state of loopback.
+         activate   -- Request used to activate loopback.
+         deactivate -- Request used to deactivate loopback."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            state (1),
+            activate (2),
+            deactivate (3)
+        }
+
+LlbControllerSessionResponseCodeType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "The last Latching Loopback Reply’s Response Code sent from 
+         Latching Loopback Responder.
+         
+         no-error              -- Action successfully completed.
+         malformed-request     -- An LLM was received that could not be parsed
+                                  or did not conform to this specification.
+         max-sessions-exceeded -- A new LL Session could not be activated
+                                  because the maximum number of active 
+                                  sessions supported on the device or port 
+                                  has already been reached.
+          resource-unavailable -- The LLF supports the requested action 
+                                  (including Max Sessions having not been 
+                                  exceeded), but does not currently have a 
+                                  resource needed to provide the requested 
+                                  action.
+         already-active        -- The LL Activate Request was successful, 
+                                  although the LLSM was already in the 
+                                  Latching Loopback Active state. The 
+                                  Expiration Timer will be changed to the new
+                                  value provided.  There was no other change
+                                  to the LL state machine.
+         already-inactive      -- The LL Deactivate Request was successful, 
+                                  although the LLSM was already in the Inactive
+                                  state. There was no change to the LLSM.
+         unsupported-request   -- The LLF does not support the requested 
+                                  action.
+         wrong-mp              -- The LL Activate Request was unsuccessful 
+                                  because the LLSM associated with the MP to 
+                                  which the request was sent has been activated
+                                  by a different MP.
+         timeout               -- The Expiration Timer has expired. The state 
+                                  has been changed to the Latching Loopback 
+                                  Inactive state.
+         prohibited            -- The state has been changed to the Latching 
+                                  Loopback Prohibited state.
+         unknown-message-type  -- The value of the Message Type field is not a 
+                                  recognized value.
+         unknown-error         -- Unknown error."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            no-error (1),
+            malformed-request (2),
+            max-sessions-exceeded (3),
+            resource-unavailable (4),
+            already-active (5),
+            already-inactive (6),
+            unsupported-request (7),
+            wrong-mp (8),
+            timeout (9),
+            prohibited (10),
+            unknown-message-type (11),
+            unknown-error (12)
+        }
+
+LlbControllerSessionStatusType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Loopback state from Latching Loopback Responder.
+         
+         active   -- Loopback is active.
+         inactive -- Loopback is not active."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            active (1),
+            inactive (2)
+        }
+
+LlbLoopbackDirectionType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Latching Loopback Direction.
+         
+         internal -- The frames egressing a port are looped back into the 
+                     device which we also call terminal loopback.
+         external -- The frames ingressing a port are looped back to egress
+                     the same port which we also call facility loopback."
+    SYNTAX   INTEGER {
+            notApplicable (0),
+            internal (1),
+            external (2)
+        }
+
+LlbControllerSessionAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "User actions on this Latching Loopback Controller Session.
+        
+        activate-loopback  -- Initiates request to activate loopback on the 
+                              Latching Loopback Responder. Latching Loopback
+                              Controller will send the Unicast Latching 
+                              Loopback Activate Request message. 
+        deactivate-loopack -- Initiates request to deactivate loopback on the 
+                              Latching Loopback Responder.  Latching Loopback
+                              Controller will send the Unicast Latching.
+                              Loopback Deactivate Request message
+        get-loopback-State -- Initiates request to get the state of the 
+                              loopback on the Latching Loopback Responder. 
+                              Latching Loopback Controller will send the 
+                              Unicast Latching Loopback State Request message."
+    SYNTAX   INTEGER {
+            none (0),
+            activate-loopback (1),
+            deactivate-loopack (2),
+            get-loopback-State (3)
+            
+        }
+
+--
+-- Latching Loopback Controller Table
+--
+f3LlbControllerTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LlbControllerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Latching Loopback controller Table."
+
+   ::= { f3LlbConfigObjects 1 }
+
+f3LlbControllerEntry OBJECT-TYPE
+    SYNTAX      F3LlbControllerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3LlbControllerTable."
+    INDEX   { dot1agCfmMdIndex, 
+              dot1agCfmMaIndex, 
+              dot1agCfmMepIdentifier, 
+              f3LlbControllerIndex }
+
+   ::= { f3LlbControllerTable 1 }
+
+F3LlbControllerEntry ::= SEQUENCE {
+    f3LlbControllerIndex              Unsigned32,
+    f3LlbControllerMaxLLRs            Integer32,
+    f3LlbControllerState              LlbControllerStateType,
+    f3LlbControllerDiscoveryTimeout   Integer32,
+    f3LlbControllerAction             LlbControllerAction,
+    f3LlbControllerStorageType        StorageType,
+    f3LlbControllerRowStatus          RowStatus
+}
+
+f3LlbControllerIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Index of Latching Loopback controller."
+   ::= { f3LlbControllerEntry 1 }
+
+f3LlbControllerMaxLLRs OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This is the maximum number of LLRs that need to be discovered.
+         Once this value is reached discovery is considered complete and
+         the discovery timeout is cancelled."
+   ::= { f3LlbControllerEntry 2 }
+
+f3LlbControllerState OBJECT-TYPE
+    SYNTAX      LlbControllerStateType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This is the state of the Latching Loopback Controller."
+   ::= { f3LlbControllerEntry 3 }
+
+f3LlbControllerDiscoveryTimeout OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This is the loopback discovery timeout."
+   ::= { f3LlbControllerEntry 4 }
+
+f3LlbControllerAction OBJECT-TYPE
+    SYNTAX      LlbControllerAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "User actions on Latching Loopback controller."
+    ::= { f3LlbControllerEntry 5 }
+
+f3LlbControllerStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The storage type for this conceptual row."
+   ::= { f3LlbControllerEntry 6 }
+
+f3LlbControllerRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row.  An entry MUST NOT exist in the 
+        active state unless all objects in the entry have an 
+        appropriate value, as described
+        in the description clause for each writable object.
+
+        The values of f3LlbControllerRowStatus supported are
+        createAndGo(4) and destroy(6).  All mandatory attributes
+        must be specified in a single SNMP SET request with
+        f3LlbControllerRowStatus value as createAndGo(4).
+        Upon successful row creation, this object has a
+        value of active(1).
+
+        The f3LlbControllerRowStatus object may be modified if
+        the associated instance of this object is equal to active(1)."
+   ::= { f3LlbControllerEntry 7 }
+
+
+--
+--  CFM MEP LLB Parameters Table
+--
+f3CfmMepLlbTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3CfmMepLlbEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "CFM Mep Latching Loopback table."
+    ::= { f3LlbConfigObjects 2 }
+
+f3CfmMepLlbEntry OBJECT-TYPE
+    SYNTAX      F3CfmMepLlbEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in the f3CfmMepLlbTable."
+    AUGMENTS { dot1agCfmMepEntry }
+    ::= { f3CfmMepLlbTable 1 }
+
+F3CfmMepLlbEntry ::= SEQUENCE {
+    f3CfmMepLlbResponderEnabled      TruthValue,
+    f3CfmMepLlbPortLLEnabled         TruthValue, 
+    f3CfmMepLlbVidList               DisplayString 
+}
+
+f3CfmMepLlbResponderEnabled OBJECT-TYPE
+    SYNTAX        TruthValue
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+        "This attribute specifies whether Latching Loopback Responder
+         function is enabled."
+    ::= { f3CfmMepLlbEntry 1 }
+
+f3CfmMepLlbPortLLEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute enables port loopback. In MEF 46 loopback is based
+         on LLFS (Latching Loopback Frame Set) which is untagged or tagged.
+         MEF 46 does not have the notion of port loopback. If this attribute
+         is true a port loopback will be activated instead of loopback for
+         untagged frames when LLFS is untagged."
+   ::= { f3CfmMepLlbEntry 2 }
+
+f3CfmMepLlbVidList OBJECT-TYPE
+    SYNTAX  DisplayString (SIZE (0..512))
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "This is a list of VIDs on which Latching Loopback is allowed.
+         An empty list indicates it is allowed on any VID. This list is
+         shall allow combination of individual VIDs and or ranges.
+         VIDs or VID ranges are comma separated. VID ranges are of the
+         form X1:X2 (range of VIDs from X1 to X2)."
+    ::= { f3CfmMepLlbEntry 3 }
+
+--
+--  LLB Controller Session Table
+--
+f3LlbControllerSessionTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LlbControllerSessionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Latching Loopback Controller Session Table."
+    ::= { f3LlbConfigObjects 3 }
+
+f3LlbControllerSessionEntry OBJECT-TYPE
+    SYNTAX      F3LlbControllerSessionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3LlbControllerSessionTable."
+    INDEX { dot1agCfmMdIndex, 
+              dot1agCfmMaIndex, 
+              dot1agCfmMepIdentifier,
+              f3LlbControllerIndex,
+              f3LlbControllerSessionIndex }
+    ::= { f3LlbControllerSessionTable 1 }
+
+F3LlbControllerSessionEntry ::= SEQUENCE {
+    f3LlbControllerSessionIndex                     Integer32,
+    f3LlbControllerSessionResponderMacAddress       MacAddress,
+    f3LlbControllerSessionState                     LlbControllerSessionStateType,
+    f3LlbControllerSessionLastRequest               LlbControllerSessionRequestType,
+    f3LlbControllerSessionLastResponseCode          LlbControllerSessionResponseCodeType,
+    f3LlbControllerSessionLastStatus                LlbControllerSessionStatusType,
+    f3LlbControllerSessionExpirationTime            Unsigned32,
+    f3LlbControllerSessionAction                    LlbControllerSessionAction
+}
+
+f3LlbControllerSessionIndex OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "Index of Latching Loopback Controller Session."
+    ::= { f3LlbControllerSessionEntry 1 }
+
+f3LlbControllerSessionResponderMacAddress OBJECT-TYPE
+    SYNTAX        MacAddress
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is the MAC address of the discovered Latching Loopback 
+          Responder."
+    ::= { f3LlbControllerSessionEntry 2 }
+
+f3LlbControllerSessionState OBJECT-TYPE
+    SYNTAX        LlbControllerSessionStateType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This indicates the state of this Latching Loopback Session."
+    ::= { f3LlbControllerSessionEntry 3 }
+
+f3LlbControllerSessionLastRequest OBJECT-TYPE
+    SYNTAX        LlbControllerSessionRequestType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is the last Latching Loopback Request sent to this
+          Latching Loopback Responder."
+    ::= { f3LlbControllerSessionEntry 4 }
+
+f3LlbControllerSessionLastResponseCode OBJECT-TYPE
+    SYNTAX        LlbControllerSessionResponseCodeType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is the last Latching Loopback Reply Response Code sent
+          from this Latching Loopback Responder."
+    ::= { f3LlbControllerSessionEntry 5 }
+
+f3LlbControllerSessionLastStatus OBJECT-TYPE
+    SYNTAX        LlbControllerSessionStatusType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is Loopback Status from any LL Activate, LL Deactivate,
+          LL State Reply."
+    ::= { f3LlbControllerSessionEntry 6 }
+
+f3LlbControllerSessionExpirationTime OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-write
+    STATUS        current
+    DESCRIPTION
+         "This is the expiration time parameter for activate-loopback action."
+    ::= { f3LlbControllerSessionEntry 7 }
+
+f3LlbControllerSessionAction OBJECT-TYPE
+    SYNTAX      LlbControllerSessionAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "User Actions on Latching Loopback Controller Session."
+    ::= { f3LlbControllerSessionEntry 8 }
+
+--
+--  LLB State Machine Table
+--
+f3LlbStateMachineTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LlbStateMachineEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Latching Loopback State Machine Table."
+    ::= { f3LlbConfigObjects 4 }
+
+f3LlbStateMachineEntry OBJECT-TYPE
+    SYNTAX      F3LlbStateMachineEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in f3LlbStateMachineTable."
+    INDEX { dot1agCfmMdIndex, 
+              dot1agCfmMaIndex, 
+              dot1agCfmMepIdentifier, 
+              f3LlbStateMachineIndex }
+    ::= { f3LlbStateMachineTable 1 }
+
+F3LlbStateMachineEntry ::= SEQUENCE {
+    f3LlbStateMachineIndex                          Integer32,
+    f3LlbStateMachineLoopbackControllerMacAddress   MacAddress,
+    f3LlbStateMachineLoopbackVid                    VlanId,
+    f3LlbStateMachineLoopbackDirection              LlbLoopbackDirectionType,
+    f3LlbStateMachineLoopbackExpirationTime         Unsigned32,
+    f3LlbStateMachineLoopbackRemainingTime          Unsigned32
+}
+
+f3LlbStateMachineIndex OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    not-accessible
+    STATUS        current
+    DESCRIPTION
+         "Index of Latching Loopback State Machine Table."
+    ::= { f3LlbStateMachineEntry 1 }
+
+f3LlbStateMachineLoopbackControllerMacAddress OBJECT-TYPE
+    SYNTAX        MacAddress
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is the MAC address of the Latching Loopback Controller."
+    ::= { f3LlbStateMachineEntry 2 }
+
+f3LlbStateMachineLoopbackVid OBJECT-TYPE
+    SYNTAX        VlanId
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is VID to be looped back. MEF 46 calls this Latching Loopback
+          Frame Set (LLFS)."
+    ::= { f3LlbStateMachineEntry 3 }
+
+f3LlbStateMachineLoopbackDirection OBJECT-TYPE
+    SYNTAX        LlbLoopbackDirectionType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is the type of loopback for this LLSM, internal or external."
+    ::= { f3LlbStateMachineEntry 4 }
+
+f3LlbStateMachineLoopbackExpirationTime OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is the expiration time of the activated loopback."
+    ::= { f3LlbStateMachineEntry 5 }
+
+f3LlbStateMachineLoopbackRemainingTime OBJECT-TYPE
+    SYNTAX        Unsigned32
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+         "This is the time remaining before expiration."
+    ::= { f3LlbStateMachineEntry 6 }
+
+
+--
+--  LLB State Machine Associated MEP Table
+--
+f3LlbStateMachineAssociatedMepTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3LlbStateMachineAssociatedMepEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "Latching Loopback State Machine Associated MEP Table."
+    ::= { f3LlbConfigObjects 5 }
+
+f3LlbStateMachineAssociatedMepEntry OBJECT-TYPE
+    SYNTAX      F3LlbStateMachineAssociatedMepEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "A conceptual row in the f3LlbStateMachineAssociatedMepTable."
+    INDEX { dot1agCfmMdIndex, 
+              dot1agCfmMaIndex, 
+              dot1agCfmMepIdentifier, 
+              f3LlbStateMachineIndex,
+              f3LlbStateMachineAssociatedMep }
+    ::= { f3LlbStateMachineAssociatedMepTable 1 }
+
+F3LlbStateMachineAssociatedMepEntry ::= SEQUENCE {
+    f3LlbStateMachineAssociatedMep       VariablePointer
+}
+
+f3LlbStateMachineAssociatedMep OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "List of MEPs with same VID as the activate MEP but at different levels."
+     ::= { f3LlbStateMachineAssociatedMepEntry 1 }
+
+--
+-- Conformance
+--
+f3LlbCompliances OBJECT IDENTIFIER ::= {f3LlbConformance 1}
+f3LlbGroups      OBJECT IDENTIFIER ::= {f3LlbConformance 2}
+
+f3LlbCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-LLB-MIB compliance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3LlbControllerGroup, f3CfmMepLlbGroup, f3LlbControllerSessionGroup,
+              f3LlbStateMachineGroup, f3LlbStateMachineAssociatedMepGroup
+        }
+    ::= { f3LlbCompliances 1 }
+
+f3LlbControllerGroup OBJECT-GROUP
+    OBJECTS {
+      f3LlbControllerIndex,
+      f3LlbControllerMaxLLRs, 
+      f3LlbControllerState,
+      f3LlbControllerDiscoveryTimeout,
+      f3LlbControllerAction,
+      f3LlbControllerStorageType,
+      f3LlbControllerRowStatus
+    }
+    STATUS  current
+    DESCRIPTION
+             "A collection of objects used to manage the Latching Loopback Controller."
+    ::= { f3LlbGroups 1 }
+
+f3CfmMepLlbGroup OBJECT-GROUP
+    OBJECTS {
+      f3CfmMepLlbResponderEnabled,
+      f3CfmMepLlbPortLLEnabled
+    }
+    STATUS  current
+    DESCRIPTION
+             "."
+    ::= { f3LlbGroups 2 }
+
+f3LlbControllerSessionGroup OBJECT-GROUP
+    OBJECTS {
+       f3LlbControllerSessionIndex,
+       f3LlbControllerSessionResponderMacAddress,
+       f3LlbControllerSessionState,
+       f3LlbControllerSessionLastRequest,
+       f3LlbControllerSessionLastResponseCode,
+       f3LlbControllerSessionLastStatus,
+       f3LlbControllerSessionExpirationTime,
+       f3LlbControllerSessionAction
+    }
+    STATUS  current
+    DESCRIPTION
+             "."
+    ::= { f3LlbGroups 3 }
+    
+f3LlbStateMachineGroup OBJECT-GROUP
+    OBJECTS {
+       f3LlbStateMachineIndex,
+       f3LlbStateMachineLoopbackControllerMacAddress,
+       f3LlbStateMachineLoopbackVid,
+       f3LlbStateMachineLoopbackDirection,
+       f3LlbStateMachineLoopbackExpirationTime,
+       f3LlbStateMachineLoopbackRemainingTime
+    }
+    STATUS  current
+    DESCRIPTION
+             "."
+    ::= { f3LlbGroups 4 }
+    
+f3LlbStateMachineAssociatedMepGroup OBJECT-GROUP
+    OBJECTS {
+       f3LlbStateMachineAssociatedMep
+    }
+    STATUS  current
+    DESCRIPTION
+             "."
+    ::= { f3LlbGroups 5 }
+
+END

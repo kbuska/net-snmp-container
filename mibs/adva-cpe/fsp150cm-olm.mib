@@ -1,0 +1,1354 @@
+F3-OLM-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32, IpAddress
+             FROM SNMPv2-SMI
+    MODULE-COMPLIANCE, OBJECT-GROUP
+             FROM SNMPv2-CONF
+    DisplayString, TruthValue, RowStatus, StorageType,
+    VariablePointer, TEXTUAL-CONVENTION, DateAndTime
+             FROM SNMPv2-TC
+    fsp150cm
+             FROM  ADVA-MIB
+    VlanId, F3DisplayString, F3DisplayString, PerfCounter64, AdminState, OperationalState, SecondaryState, CmPmIntervalType, CmPmBinAction
+             FROM  CM-COMMON-MIB
+    neIndex, shelfIndex, slotIndex
+             FROM CM-ENTITY-MIB;
+
+f3OlmMIB MODULE-IDENTITY
+    LAST-UPDATED    "201601100000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the OLM MIB definitions used by 
+             the F3 (FSP150CM/CC) product lines.
+             Copyright (C) ADVA."
+    REVISION        "201601100000Z"
+    DESCRIPTION
+        "" 
+    ::= {fsp150cm 42}
+
+-- 
+-- OID definitions
+-- 
+f3OlmObjects        OBJECT IDENTIFIER ::= {f3OlmMIB 1}
+f3OlmPerformance    OBJECT IDENTIFIER ::= {f3OlmMIB 2}
+f3OlmNotifications  OBJECT IDENTIFIER ::= {f3OlmMIB 3}
+f3OlmConformance    OBJECT IDENTIFIER ::= {f3OlmMIB 4}
+
+--
+-- Textual Conventions
+--
+
+OlmSessionMonitorStatus ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "olm session monitor status."
+    SYNTAX     INTEGER {
+                 in-progress (1),
+                 scheduled (2),
+                 stopped (3)
+               }
+
+SchedulerType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "scheduler Type."
+    SYNTAX     INTEGER {
+                 duration (1),
+                 continuous (2)
+               }
+
+SchedulerStartType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Scheduler start time type:
+            immediate - This indicates to start now
+            fixed - This is the absolute wall clock start time"
+    SYNTAX     INTEGER {
+                 immediate (1),
+                 fixed (2)
+               }
+
+--
+--  OLM Controller Table
+--
+f3OlmControllerTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3OlmControllerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the OLM Controller."
+    ::= { f3OlmObjects 1 }
+
+f3OlmControllerEntry  OBJECT-TYPE
+    SYNTAX      F3OlmControllerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3OlmControllerTable."
+    INDEX { neIndex, shelfIndex, slotIndex, f3OlmControllerIndex }
+    ::= { f3OlmControllerTable 1 }
+
+F3OlmControllerEntry ::= SEQUENCE { 
+    f3OlmControllerIndex                               Integer32,
+    f3OlmControllerAlias                               DisplayString,
+    f3OlmControllerAdminState                          AdminState,
+    f3OlmControllerOperationalState                    OperationalState,
+    f3OlmControllerSecondaryState                      SecondaryState,
+    f3OlmControllerSampleRatio                         Unsigned32, 
+    f3OlmControllerEgressPortEid                       VariablePointer,
+    f3OlmControllerEgressTagControl                    TruthValue,
+    f3OlmControllerEgressTag                           VlanId,
+    f3OlmControllerEgressPayloadOffset                 Unsigned32,
+    f3OlmControllerIngressPortEid                      VariablePointer,
+    f3OlmControllerIngressTagControl                   TruthValue,
+    f3OlmControllerIngressTag                          VlanId,
+    f3OlmControllerIngressPayloadOffset                Unsigned32,
+    f3OlmControllerElapsedTime                         Integer32,
+    f3OlmControllerProcessedPackets                    PerfCounter64,
+    f3OlmControllerValidResults                        PerfCounter64,
+    f3OlmControllerEgressShortPackets                  PerfCounter64,
+    f3OlmControllerOverFlowPackets                     PerfCounter64,
+    f3OlmControllerStorageType                         StorageType,
+    f3OlmControllerCollisionPackets                    PerfCounter64
+}
+
+f3OlmControllerIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The index of the OLM Controller entry."
+    ::= { f3OlmControllerEntry 1 }
+    
+f3OlmControllerAlias OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..64))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The OLM Controller alias."
+    ::= { f3OlmControllerEntry 2 }
+    
+f3OlmControllerAdminState OBJECT-TYPE
+    SYNTAX  AdminState 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+             "Administrative State of the OLM Controller."
+    ::= { f3OlmControllerEntry 3 }
+    
+f3OlmControllerOperationalState OBJECT-TYPE
+    SYNTAX  OperationalState 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+             "Operational State of the OLM Controller."
+    ::= { f3OlmControllerEntry 4 }
+
+f3OlmControllerSecondaryState OBJECT-TYPE
+    SYNTAX  SecondaryState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+             "Secondary State of the OLM Controller."
+    ::= { f3OlmControllerEntry 5 }
+    
+f3OlmControllerSampleRatio OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This attribute specifies monitored packets sample ratio
+          If set to 1 each packet is measured for a latency
+          By default each 10’s packet is measured for a latency."
+     ::= { f3OlmControllerEntry 6 }
+
+f3OlmControllerEgressPortEid OBJECT-TYPE
+    SYNTAX      VariablePointer 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This attribute is used for configuration of OLM egress port."
+    ::= { f3OlmControllerEntry 7 }
+    
+f3OlmControllerEgressTagControl OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This object allows specification of whether or not the egress VLAN Tag
+              filter is enabled.
+             If disabled the OLM is performed for all the egress packets"
+    ::= { f3OlmControllerEntry 8 }
+    
+f3OlmControllerEgressTag OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This attribute is used to configure egress VLAN ID Filter."
+     ::= { f3OlmControllerEntry 9 }
+     
+f3OlmControllerEgressPayloadOffset OBJECT-TYPE
+    SYNTAX     Unsigned32 (0..256)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This attributes specifies egress packets payload offset of the Hash calculation.
+          The offset is specified for number of octets after end of IP header"
+     ::= { f3OlmControllerEntry 10 }
+
+f3OlmControllerIngressPortEid OBJECT-TYPE
+    SYNTAX      VariablePointer 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This attribute is used for configuration of OLM ingress port."
+    ::= { f3OlmControllerEntry 11 }
+
+f3OlmControllerIngressTagControl OBJECT-TYPE
+    SYNTAX      TruthValue 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "This object allows specification of whether or not the Ingress VLAN Tag
+              filter is enabled.
+             If disabled the OLM is performed for all the ingress packets"
+    ::= { f3OlmControllerEntry 12 }
+    
+f3OlmControllerIngressTag OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This attribute is used to configure Ingress VLAN ID Filter."
+     ::= { f3OlmControllerEntry 13 }
+     
+f3OlmControllerIngressPayloadOffset OBJECT-TYPE
+    SYNTAX     Unsigned32 (0..256)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This attributes specifies Ingress packets payload offset of the Hash calculation.
+          The offset is specified for number of octets after end of IP header"
+     ::= { f3OlmControllerEntry 14 }
+     
+f3OlmControllerElapsedTime OBJECT-TYPE
+     SYNTAX     Integer32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The elapsed time since the last time the controller Administrative state configured to IS."
+     ::= { f3OlmControllerEntry 15 }
+     
+f3OlmControllerProcessedPackets OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Total number of egress packets for which hash has been calculated"
+     ::= { f3OlmControllerEntry 16 }
+     
+f3OlmControllerValidResults OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "This attribute indicates total number of valid measurement results
+          since the last time the controller Administrative state configured to IS."
+     ::= { f3OlmControllerEntry 17 }
+     
+f3OlmControllerEgressShortPackets OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "This attribute indicates total number of packets for which
+          latency couldnt be measured due to insufficient length"
+     ::= { f3OlmControllerEntry 18 }
+
+f3OlmControllerOverFlowPackets OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "This attribute indicates total number of packets for which
+             latency couldnt be measured due to insufficient system resources"
+     ::= { f3OlmControllerEntry 19 }
+     
+f3OlmControllerStorageType OBJECT-TYPE
+     SYNTAX     StorageType
+     MAX-ACCESS read-create
+     STATUS     current
+     DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3OlmControllerEntry 20 }
+     
+f3OlmControllerCollisionPackets OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "This attribute indicates total number of packets with 
+          collision indication. The information for such packets is ignored"
+     ::= { f3OlmControllerEntry 21 }
+
+--
+--  OLM Session Monitor Table
+--
+f3OlmSessionMonitorTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3OlmSessionMonitorEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the OLM Controller."
+    ::= { f3OlmObjects 2 }
+
+f3OlmSessionMonitorEntry  OBJECT-TYPE
+    SYNTAX      F3OlmSessionMonitorEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3OlmSessionMonitorTable."
+    INDEX { neIndex, shelfIndex, slotIndex, f3OlmControllerIndex, f3OlmSessionMonitorIndex }
+    ::= { f3OlmSessionMonitorTable 1 }
+
+F3OlmSessionMonitorEntry ::= SEQUENCE { 
+    f3OlmSessionMonitorIndex                               Integer32,
+    f3OlmSessionMonitorAlias                               DisplayString,
+    f3OlmSessionMonitorAdminState                          AdminState,
+    f3OlmSessionMonitorOperationalState                    OperationalState,
+    f3OlmSessionMonitorSecondaryState                      SecondaryState,
+    f3OlmSessionMonitorStatus                              OlmSessionMonitorStatus,
+    f3OlmSessionMonitorSrcIpv4AddressControl               TruthValue,
+    f3OlmSessionMonitorSrcIpv4AddressLowLimit              IpAddress,
+    f3OlmSessionMonitorSrcIpv4AddressHighLimit             IpAddress,
+    f3OlmSessionMonitorDstIpv4AddressControl               TruthValue,
+    f3OlmSessionMonitorDstIpv4AddressLowLimit              IpAddress,
+    f3OlmSessionMonitorDstIpv4AddressHighLimit             IpAddress,
+    f3OlmSessionMonitorSrcPortControl                      TruthValue,
+    f3OlmSessionMonitorSrcPortLowLimit                     Integer32,
+    f3OlmSessionMonitorSrcPortHighLimit                    Integer32,
+    f3OlmSessionMonitorDstPortControl                      TruthValue,
+    f3OlmSessionMonitorDstPortLowLimit                     Integer32,
+    f3OlmSessionMonitorDstPortHighLimit                    Integer32,
+    f3OlmSessionMonitorProtocolControl                     TruthValue,
+    f3OlmSessionMonitorProtocolNumber                      Integer32,
+    f3OlmSessionMonitorDscpControl                         TruthValue,
+    f3OlmSessionMonitorDscpValue                           Integer32,
+    f3OlmSessionMonitorSchedulerType                       SchedulerType,
+    f3OlmSessionMonitorSchedulerDuration                   Unsigned32,
+    f3OlmSessionMonitorSchedulerElapsedTime                Unsigned32,
+    f3OlmSessionMonitorSchedulerStartType                  SchedulerStartType,
+    f3OlmSessionMonitorSchedulerStartDate                  DisplayString,
+    f3OlmSessionMonitorSchedulerStartTime                  DisplayString,
+    f3OlmSessionMonitorStorageType                         StorageType,
+    f3OlmSessionMonitorRowStatus                           RowStatus
+}
+
+f3OlmSessionMonitorIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The index of the OLM Controller entry."
+    ::= { f3OlmSessionMonitorEntry 1 }
+    
+f3OlmSessionMonitorAlias OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..64))
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor alias."
+    ::= { f3OlmSessionMonitorEntry 2 }
+    
+f3OlmSessionMonitorAdminState OBJECT-TYPE
+    SYNTAX  AdminState 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "Administrative State of the OLM session monitor."
+    ::= { f3OlmSessionMonitorEntry 3 }
+    
+f3OlmSessionMonitorOperationalState OBJECT-TYPE
+    SYNTAX  OperationalState 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+             "Operational State of the OLM session monitor."
+    ::= { f3OlmSessionMonitorEntry 4 }
+
+f3OlmSessionMonitorSecondaryState OBJECT-TYPE
+    SYNTAX  SecondaryState
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "Secondary State of the OLM session monitor."
+    ::= { f3OlmSessionMonitorEntry 5 }
+
+f3OlmSessionMonitorStatus OBJECT-TYPE
+    SYNTAX     OlmSessionMonitorStatus
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+           "This attribute indicates the current state of the Session monitor state machine."
+    ::= { f3OlmSessionMonitorEntry 6 }
+
+f3OlmSessionMonitorSrcIpv4AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This attribute is used to control source IPv4 address filtering
+            over the statistics collection"
+    ::= { f3OlmSessionMonitorEntry 7 }
+
+f3OlmSessionMonitorSrcIpv4AddressLowLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor source IPv4 address low limit."
+    ::= { f3OlmSessionMonitorEntry 8 }
+
+f3OlmSessionMonitorSrcIpv4AddressHighLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor source IPv4 address high limit."
+    ::= { f3OlmSessionMonitorEntry 9 }
+
+f3OlmSessionMonitorDstIpv4AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This attribute is used to control destination IPv4 address filtering
+            over the statistics collection"
+    ::= { f3OlmSessionMonitorEntry 10 }
+
+f3OlmSessionMonitorDstIpv4AddressLowLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor destination IPv4 address low limit."
+    ::= { f3OlmSessionMonitorEntry 11 }
+
+f3OlmSessionMonitorDstIpv4AddressHighLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor destination IPv4 address high limit."
+    ::= { f3OlmSessionMonitorEntry 12 }
+
+f3OlmSessionMonitorSrcPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This attribute is used to control source port filtering
+            over the statistics collection"
+    ::= { f3OlmSessionMonitorEntry 13 }
+
+f3OlmSessionMonitorSrcPortLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor source port low limit."
+    ::= { f3OlmSessionMonitorEntry 14 }
+
+f3OlmSessionMonitorSrcPortHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor source port high limit."
+    ::= { f3OlmSessionMonitorEntry 15 }
+
+f3OlmSessionMonitorDstPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This attribute is used to control destination port filtering
+           over the statistics collection"
+    ::= { f3OlmSessionMonitorEntry 16 }
+
+f3OlmSessionMonitorDstPortLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor destination port low limit."
+    ::= { f3OlmSessionMonitorEntry 17 }
+
+f3OlmSessionMonitorDstPortHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor destination port high limit."
+    ::= { f3OlmSessionMonitorEntry 18 }
+
+f3OlmSessionMonitorProtocolControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This attribute is used to control protocol filtering
+            over the statistics collection"
+    ::= { f3OlmSessionMonitorEntry 19 }
+
+f3OlmSessionMonitorProtocolNumber OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor protocol number."
+    ::= { f3OlmSessionMonitorEntry 20 }
+
+f3OlmSessionMonitorDscpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This attribute is used to control DSCP priority filtering
+           over the statistics collection"
+    ::= { f3OlmSessionMonitorEntry 21 }
+
+f3OlmSessionMonitorDscpValue OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The OLM session monitor DSCP value."
+    ::= { f3OlmSessionMonitorEntry 22 }
+
+f3OlmSessionMonitorSchedulerType OBJECT-TYPE
+    SYNTAX  SchedulerType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of OLM session monitor scheduler. When 'duration' test is
+           specified, monitor will run for 'f3OlmSessionMonitorSchedulerDuration' time.
+           when 'continous' is specified monitor will run until an 'f3OlmSessionMonitorAdminState'
+           is set to UA."
+    ::= { f3OlmSessionMonitorEntry 23 }
+
+f3OlmSessionMonitorSchedulerDuration OBJECT-TYPE
+    SYNTAX  Unsigned32 (0..259200)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This attribute specifies statistics collection duration in seconds.
+           If f3OlmSessionMonitorSchedulerType is CONTINUOUS, this attribute is not applicable."
+    ::= { f3OlmSessionMonitorEntry 24 }
+
+f3OlmSessionMonitorSchedulerElapsedTime OBJECT-TYPE
+    SYNTAX  Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "Time in seconds since OLM monitor statistics collection is activated."
+    ::= { f3OlmSessionMonitorEntry 25 }
+
+f3OlmSessionMonitorSchedulerStartType OBJECT-TYPE
+    SYNTAX  SchedulerStartType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This indicates the start time type which tells how to interpret
+           the start time attribute.
+
+           If IMMEDIATE, f3OlmSessionMonitorSchedulerStartDate & f3OlmSessionMonitorSchedulerStartTime are not applicable
+           If FIXED, f3OlmSessionMonitorSchedulerStartDate & f3OlmSessionMonitorSchedulerStartTime is the wall clock start time"
+    ::= { f3OlmSessionMonitorEntry 26 }
+
+f3OlmSessionMonitorSchedulerStartDate OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This is the date part of the session monitor start time. When AdminState
+           is set to IS, the Date and Time are converted to the NTP timestamp format as
+           defined in RFC 1305 [REF13] to send in Request-TW-Session message. 
+           The first 32 bits are the seconds since 0h Jan 1 1900 and the second 32 bits
+           is the fractional second and is the number of units of 200 picoseconds.
+
+           If f3OlmSessionMonitorSchedulerStartType is IMMEDIATE, this attribute is not applicable.
+           If f3OlmSessionMonitorSchedulerStartType is FIXED, this attribute is the date
+           when to start the monitor."
+    ::= { f3OlmSessionMonitorEntry 27 }
+
+f3OlmSessionMonitorSchedulerStartTime OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This is the date part of the session monitor start time. When AdminState
+           is set to IS, the Date and Time are converted to the NTP timestamp format as
+           defined in RFC 1305 [REF13] to send in Request-TW-Session message. 
+           The first 32 bits are the seconds since 0h Jan 1 1900 and the second 32 bits
+           is the fractional second and is the number of units of 200 picoseconds.
+
+           If f3OlmSessionMonitorSchedulerStartType is IMMEDIATE, this attribute is not applicable.
+           If f3OlmSessionMonitorSchedulerStartType is FIXED, this attribute is the time
+           when to start the monitor."
+    ::= { f3OlmSessionMonitorEntry 28 }
+
+f3OlmSessionMonitorStorageType OBJECT-TYPE
+     SYNTAX     StorageType
+     MAX-ACCESS read-create
+     STATUS     current
+     DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3OlmSessionMonitorEntry 29 }
+
+f3OlmSessionMonitorRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3OlmSessionMonitorRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3OlmSessionMonitorRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3OlmSessionMonitorRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3OlmSessionMonitorEntry 30 }
+
+--
+-- OLM Session Monitor Current Statistics Table
+--
+f3OlmSessionMonitorStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3OlmSessionMonitorStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of OLM Session Monitor related statistics.  
+             These reflect the current data."
+    ::= { f3OlmPerformance 1 }
+
+f3OlmSessionMonitorStatsEntry OBJECT-TYPE
+    SYNTAX      F3OlmSessionMonitorStatsEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3OlmSessionMonitorStatsTable.
+             Entries exist in this table for each Session Monitor."
+    INDEX { neIndex, shelfIndex, slotIndex, f3OlmControllerIndex, f3OlmSessionMonitorIndex, f3OlmSessionMonitorStatsIndex }
+    ::= { f3OlmSessionMonitorStatsTable 1 }
+
+F3OlmSessionMonitorStatsEntry ::= SEQUENCE {
+    f3OlmSessionMonitorStatsIndex                  Integer32,
+    f3OlmSessionMonitorStatsIntervalType           CmPmIntervalType,
+    f3OlmSessionMonitorStatsValid                  TruthValue,
+    f3OlmSessionMonitorStatsAction                 CmPmBinAction,
+    f3OlmSessionMonitorStatsTotalPackets64To127    PerfCounter64,
+    f3OlmSessionMonitorStatsMinDelay64To127        Unsigned32,
+    f3OlmSessionMonitorStatsMaxDelay64To127        Unsigned32,
+    f3OlmSessionMonitorStatsAvgDelay64To127        Unsigned32,
+    f3OlmSessionMonitorStatsTotalPackets128To255   PerfCounter64,
+    f3OlmSessionMonitorStatsMinDelay128To255       Unsigned32,
+    f3OlmSessionMonitorStatsMaxDelay128To255       Unsigned32,
+    f3OlmSessionMonitorStatsAvgDelay128To255       Unsigned32,
+    f3OlmSessionMonitorStatsTotalPackets256To511   PerfCounter64,
+    f3OlmSessionMonitorStatsMinDelay256To511       Unsigned32,
+    f3OlmSessionMonitorStatsMaxDelay256To511       Unsigned32,
+    f3OlmSessionMonitorStatsAvgDelay256To511       Unsigned32,
+    f3OlmSessionMonitorStatsTotalPackets512To1023  PerfCounter64,
+    f3OlmSessionMonitorStatsMinDelay512To1023      Unsigned32,
+    f3OlmSessionMonitorStatsMaxDelay512To1023      Unsigned32,
+    f3OlmSessionMonitorStatsAvgDelay512To1023      Unsigned32,
+    f3OlmSessionMonitorStatsTotalPackets1024ToMtu  PerfCounter64,
+    f3OlmSessionMonitorStatsMinDelay1024ToMtu      Unsigned32,
+    f3OlmSessionMonitorStatsMaxDelay1024ToMtu      Unsigned32,
+    f3OlmSessionMonitorStatsAvgDelay1024ToMtu      Unsigned32,
+    f3OlmSessionMonitorStatsSumTotalPackets        PerfCounter64
+}
+
+f3OlmSessionMonitorStatsIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this OLM Session Monitor statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3OlmSessionMonitorStatsEntry 1 }
+
+f3OlmSessionMonitorStatsIntervalType OBJECT-TYPE
+    SYNTAX      CmPmIntervalType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Interval over which Performance Monitoring data is collected."
+    ::= { f3OlmSessionMonitorStatsEntry 2 }
+
+f3OlmSessionMonitorStatsValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3OlmSessionMonitorStatsEntry 3 }
+
+f3OlmSessionMonitorStatsAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3OlmSessionMonitorStatsEntry 4 }
+
+f3OlmSessionMonitorStatsTotalPackets64To127 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 64 to 127 octets."
+     ::= { f3OlmSessionMonitorStatsEntry 5 }
+
+f3OlmSessionMonitorStatsMinDelay64To127 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 64 to 127 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 6 }
+
+f3OlmSessionMonitorStatsMaxDelay64To127 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 64 to 127 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 7 }
+
+f3OlmSessionMonitorStatsAvgDelay64To127 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 64 to 127 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 8 }
+
+f3OlmSessionMonitorStatsTotalPackets128To255 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorStatsEntry 9 }
+
+f3OlmSessionMonitorStatsMinDelay128To255 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 128 to 255 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 10 }
+
+f3OlmSessionMonitorStatsMaxDelay128To255 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 128 to 255 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 11 }
+
+f3OlmSessionMonitorStatsAvgDelay128To255 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 128 to 255 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 12 }
+
+f3OlmSessionMonitorStatsTotalPackets256To511 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorStatsEntry 13 }
+
+f3OlmSessionMonitorStatsMinDelay256To511 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 128 to 255 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 14 }
+
+f3OlmSessionMonitorStatsMaxDelay256To511 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 128 to 255 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 15 }
+
+f3OlmSessionMonitorStatsAvgDelay256To511 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 128 to 255 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 16 }
+
+f3OlmSessionMonitorStatsTotalPackets512To1023 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 512 to 1023 octets."
+     ::= { f3OlmSessionMonitorStatsEntry 17 }
+
+f3OlmSessionMonitorStatsMinDelay512To1023 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 512 to 1023 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 18 }
+
+f3OlmSessionMonitorStatsMaxDelay512To1023 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 512 to 1023 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 19 }
+
+f3OlmSessionMonitorStatsAvgDelay512To1023 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 512 to 1023 octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 20 }
+
+f3OlmSessionMonitorStatsTotalPackets1024ToMtu OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 1024 to Mtu octets."
+     ::= { f3OlmSessionMonitorStatsEntry 21 }
+
+f3OlmSessionMonitorStatsMinDelay1024ToMtu OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 1024 to Mtu octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 22 }
+
+f3OlmSessionMonitorStatsMaxDelay1024ToMtu OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 1024 to Mtu octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 23 }
+
+f3OlmSessionMonitorStatsAvgDelay1024ToMtu OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 1024 to Mtu octets.
+          4294967295 means Not Availiable"
+     ::= { f3OlmSessionMonitorStatsEntry 24 }
+
+f3OlmSessionMonitorStatsSumTotalPackets OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 1024 to Mtu octets."
+     ::= { f3OlmSessionMonitorStatsEntry 25 }
+
+--
+-- OLM Session Monitor history Statistics Table
+--
+f3OlmSessionMonitorHistoryTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3OlmSessionMonitorHistoryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of OLM Session Monitor related history statistics.  
+             These reflect the history data."
+    ::= { f3OlmPerformance 2 }
+
+f3OlmSessionMonitorHistoryEntry OBJECT-TYPE
+    SYNTAX      F3OlmSessionMonitorHistoryEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3OlmSessionMonitorHistoryTable.
+             Entries exist in this table for each OLM Session Monitor."
+    INDEX { neIndex, shelfIndex, slotIndex, f3OlmControllerIndex, f3OlmSessionMonitorIndex, f3OlmSessionMonitorStatsIndex, f3OlmSessionMonitorHistoryIndex }
+    ::= { f3OlmSessionMonitorHistoryTable 1 }
+
+F3OlmSessionMonitorHistoryEntry ::= SEQUENCE {
+    f3OlmSessionMonitorHistoryIndex                  Integer32,
+    f3OlmSessionMonitorHistoryTime                   DateAndTime,
+    f3OlmSessionMonitorHistoryValid                  TruthValue,
+    f3OlmSessionMonitorHistoryAction                 CmPmBinAction,
+    f3OlmSessionMonitorHistoryTotalPackets64To127    PerfCounter64,
+    f3OlmSessionMonitorHistoryMinDelay64To127        Unsigned32,
+    f3OlmSessionMonitorHistoryMaxDelay64To127        Unsigned32,
+    f3OlmSessionMonitorHistoryAvgDelay64To127        Unsigned32,
+    f3OlmSessionMonitorHistoryTotalPackets128To255   PerfCounter64,
+    f3OlmSessionMonitorHistoryMinDelay128To255       Unsigned32,
+    f3OlmSessionMonitorHistoryMaxDelay128To255       Unsigned32,
+    f3OlmSessionMonitorHistoryAvgDelay128To255       Unsigned32,
+    f3OlmSessionMonitorHistoryTotalPackets256To511   PerfCounter64,
+    f3OlmSessionMonitorHistoryMinDelay256To511       Unsigned32,
+    f3OlmSessionMonitorHistoryMaxDelay256To511       Unsigned32,
+    f3OlmSessionMonitorHistoryAvgDelay256To511       Unsigned32,
+    f3OlmSessionMonitorHistoryTotalPackets512To1023  PerfCounter64,
+    f3OlmSessionMonitorHistoryMinDelay512To1023      Unsigned32,
+    f3OlmSessionMonitorHistoryMaxDelay512To1023      Unsigned32,
+    f3OlmSessionMonitorHistoryAvgDelay512To1023      Unsigned32,
+    f3OlmSessionMonitorHistoryTotalPackets1024ToMtu  PerfCounter64,
+    f3OlmSessionMonitorHistoryMinDelay1024ToMtu      Unsigned32,
+    f3OlmSessionMonitorHistoryMaxDelay1024ToMtu      Unsigned32,
+    f3OlmSessionMonitorHistoryAvgDelay1024ToMtu      Unsigned32,
+    f3OlmSessionMonitorHistorySumTotalPackets        PerfCounter64
+}
+
+f3OlmSessionMonitorHistoryIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..32)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this flow point statistics entry."
+    ::= { f3OlmSessionMonitorHistoryEntry 1 }
+
+f3OlmSessionMonitorHistoryTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the time of history bin creation." 
+    ::= { f3OlmSessionMonitorHistoryEntry 2 }
+
+f3OlmSessionMonitorHistoryValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3OlmSessionMonitorHistoryEntry 3 }
+
+f3OlmSessionMonitorHistoryAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3OlmSessionMonitorHistoryEntry 4 }
+
+f3OlmSessionMonitorHistoryTotalPackets64To127 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 64 to 127 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 5 }
+
+f3OlmSessionMonitorHistoryMinDelay64To127 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 64 to 127 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 6 }
+
+f3OlmSessionMonitorHistoryMaxDelay64To127 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 64 to 127 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 7 }
+
+f3OlmSessionMonitorHistoryAvgDelay64To127 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 64 to 127 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 8 }
+
+f3OlmSessionMonitorHistoryTotalPackets128To255 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 9 }
+
+f3OlmSessionMonitorHistoryMinDelay128To255 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 10 }
+
+f3OlmSessionMonitorHistoryMaxDelay128To255 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 11 }
+
+f3OlmSessionMonitorHistoryAvgDelay128To255 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 12 }
+
+f3OlmSessionMonitorHistoryTotalPackets256To511 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 13 }
+
+f3OlmSessionMonitorHistoryMinDelay256To511 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 14 }
+
+f3OlmSessionMonitorHistoryMaxDelay256To511 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 15 }
+
+f3OlmSessionMonitorHistoryAvgDelay256To511 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 128 to 255 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 16 }
+
+f3OlmSessionMonitorHistoryTotalPackets512To1023 OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 512 to 1023 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 17 }
+
+f3OlmSessionMonitorHistoryMinDelay512To1023 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 512 to 1023 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 18 }
+
+f3OlmSessionMonitorHistoryMaxDelay512To1023 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 512 to 1023 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 19 }
+
+f3OlmSessionMonitorHistoryAvgDelay512To1023 OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 512 to 1023 octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 20 }
+
+f3OlmSessionMonitorHistoryTotalPackets1024ToMtu OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Number of results for packets with length 1024 to Mtu octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 21 }
+
+f3OlmSessionMonitorHistoryMinDelay1024ToMtu OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Minimum delay in ns for packets with length 1024 to Mtu octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 22 }
+
+f3OlmSessionMonitorHistoryMaxDelay1024ToMtu OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Maximum delay in ns for packets with length 1024 to Mtu octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 23 }
+
+f3OlmSessionMonitorHistoryAvgDelay1024ToMtu OBJECT-TYPE
+     SYNTAX     Unsigned32
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 1024 to Mtu octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 24 }
+
+f3OlmSessionMonitorHistorySumTotalPackets OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Average delay in ns for packets with length 1024 to Mtu octets."
+     ::= { f3OlmSessionMonitorHistoryEntry 25 }
+
+
+--
+-- OLM Session Monitor Threshold Table
+--
+f3OlmSessionMonitorThresholdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3OlmSessionMonitorThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A table of entries that allow manageability of OLM Session Monitor Thresholds."
+    ::= { f3OlmPerformance 3 }
+
+f3OlmSessionMonitorThresholdEntry OBJECT-TYPE
+    SYNTAX      F3OlmSessionMonitorThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3OlmSessionMonitorThresholdTable."
+    INDEX { neIndex, shelfIndex, slotIndex,
+            f3OlmControllerIndex, f3OlmSessionMonitorIndex,
+            f3OlmSessionMonitorStatsIndex, f3OlmSessionMonitorThresholdIndex }
+    ::= { f3OlmSessionMonitorThresholdTable 1 }
+
+F3OlmSessionMonitorThresholdEntry ::= SEQUENCE {
+    f3OlmSessionMonitorThresholdIndex       Integer32,
+    f3OlmSessionMonitorThresholdInterval    CmPmIntervalType,
+    f3OlmSessionMonitorThresholdVariable    VariablePointer,
+    f3OlmSessionMonitorThresholdValueLo     Unsigned32,
+    f3OlmSessionMonitorThresholdValueHi     Unsigned32,
+    f3OlmSessionMonitorThresholdMonValue    Counter64
+}
+
+f3OlmSessionMonitorThresholdIndex OBJECT-TYPE
+    SYNTAX     Integer32 (1..65535)
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "An index that uniquely identifies an entry in the
+        f3OlmSessionMonitorThresholdTable."
+    ::= { f3OlmSessionMonitorThresholdEntry 1 }
+
+f3OlmSessionMonitorThresholdInterval OBJECT-TYPE
+    SYNTAX     CmPmIntervalType
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The interval over which monitored value is
+        sampled and compared with the specified threshold."
+    ::= { f3OlmSessionMonitorThresholdEntry 2 }
+
+f3OlmSessionMonitorThresholdVariable OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The object identifier of the particular variable to be
+        sampled."
+    ::= { f3OlmSessionMonitorThresholdEntry 3 }
+
+f3OlmSessionMonitorThresholdValueLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Lower 32 bits of the threshold value."
+    ::= { f3OlmSessionMonitorThresholdEntry 4 }
+
+f3OlmSessionMonitorThresholdValueHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Higher 32 bits of the threshold value."
+    ::= { f3OlmSessionMonitorThresholdEntry 5 }
+
+f3OlmSessionMonitorThresholdMonValue OBJECT-TYPE
+    SYNTAX     Counter64
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Monitored value corresponding to f3OlmSessionMonitorThresholdVariable."
+    ::= { f3OlmSessionMonitorThresholdEntry 6 }
+
+
+---
+---Notifications
+---
+
+f3OlmSessionMonitorThresholdCrossingAlert NOTIFICATION-TYPE
+    OBJECTS {
+                f3OlmSessionMonitorThresholdIndex,
+                f3OlmSessionMonitorThresholdInterval,
+                f3OlmSessionMonitorThresholdVariable,
+                f3OlmSessionMonitorThresholdValueLo,
+                f3OlmSessionMonitorThresholdValueHi,
+                f3OlmSessionMonitorThresholdMonValue
+            }
+    STATUS  current
+    DESCRIPTION
+            "This trap is sent each time a threshold on a PM condition
+             on an OLM Session Monitor is crossed."
+  ::= { f3OlmNotifications 1 }
+
+--
+-- Conformance
+--
+f3OlmCompliances OBJECT IDENTIFIER ::= {f3OlmConformance 1}
+f3OlmGroups      OBJECT IDENTIFIER ::= {f3OlmConformance 2}
+
+f3OlmCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the OLM."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3OlmObjectsGroup
+        }
+    ::= { f3OlmCompliances 1 }
+
+f3OlmObjectsGroup OBJECT-GROUP
+    OBJECTS {
+             f3OlmControllerIndex,f3OlmControllerAlias,
+             f3OlmControllerAdminState,f3OlmControllerOperationalState,
+             f3OlmControllerSecondaryState,f3OlmControllerSampleRatio,
+             f3OlmControllerEgressPortEid,f3OlmControllerEgressTagControl,
+             f3OlmControllerEgressTag,f3OlmControllerEgressPayloadOffset,
+             f3OlmControllerIngressPortEid,f3OlmControllerIngressTagControl,
+             f3OlmControllerIngressTag,f3OlmControllerIngressPayloadOffset,
+             f3OlmControllerElapsedTime,f3OlmControllerProcessedPackets,
+             f3OlmControllerValidResults,f3OlmControllerEgressShortPackets,
+             f3OlmControllerOverFlowPackets,f3OlmControllerStorageType,
+
+             f3OlmSessionMonitorIndex,f3OlmSessionMonitorAlias,
+             f3OlmSessionMonitorAdminState,f3OlmSessionMonitorOperationalState,
+             f3OlmSessionMonitorSecondaryState,f3OlmSessionMonitorStatus,
+             f3OlmSessionMonitorSrcIpv4AddressControl,f3OlmSessionMonitorSrcIpv4AddressLowLimit,
+             f3OlmSessionMonitorSrcIpv4AddressHighLimit,f3OlmSessionMonitorDstIpv4AddressControl,
+             f3OlmSessionMonitorDstIpv4AddressLowLimit,f3OlmSessionMonitorDstIpv4AddressHighLimit,
+             f3OlmSessionMonitorSrcPortControl,f3OlmSessionMonitorSrcPortLowLimit,
+             f3OlmSessionMonitorSrcPortHighLimit,f3OlmSessionMonitorDstPortControl,
+             f3OlmSessionMonitorDstPortLowLimit,f3OlmSessionMonitorDstPortHighLimit,
+             f3OlmSessionMonitorProtocolControl,f3OlmSessionMonitorProtocolNumber,
+             f3OlmSessionMonitorDscpControl,f3OlmSessionMonitorDscpValue,
+             f3OlmSessionMonitorSchedulerType,f3OlmSessionMonitorSchedulerDuration,
+             f3OlmSessionMonitorSchedulerElapsedTime,f3OlmSessionMonitorSchedulerStartType,
+             f3OlmSessionMonitorSchedulerStartDate,f3OlmSessionMonitorSchedulerStartTime,
+             f3OlmSessionMonitorStorageType,f3OlmSessionMonitorRowStatus
+        }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects used to manage the OLM functionality."
+    ::= { f3OlmGroups 1 }
+
+f3OlmPerfGroup OBJECT-GROUP
+    OBJECTS {
+             f3OlmSessionMonitorStatsIndex,f3OlmSessionMonitorStatsIntervalType,
+             f3OlmSessionMonitorStatsValid,f3OlmSessionMonitorStatsAction,
+             f3OlmSessionMonitorStatsTotalPackets64To127,f3OlmSessionMonitorStatsMinDelay64To127,
+             f3OlmSessionMonitorStatsMaxDelay64To127,f3OlmSessionMonitorStatsAvgDelay64To127,
+             f3OlmSessionMonitorStatsTotalPackets128To255,f3OlmSessionMonitorStatsMinDelay128To255,
+             f3OlmSessionMonitorStatsMaxDelay128To255,f3OlmSessionMonitorStatsAvgDelay128To255,
+             f3OlmSessionMonitorStatsTotalPackets256To511,f3OlmSessionMonitorStatsMinDelay256To511,
+             f3OlmSessionMonitorStatsMaxDelay256To511,f3OlmSessionMonitorStatsAvgDelay256To511,
+             f3OlmSessionMonitorStatsMinDelay512To1023,f3OlmSessionMonitorStatsMaxDelay512To1023,
+             f3OlmSessionMonitorStatsAvgDelay512To1023,f3OlmSessionMonitorStatsTotalPackets512To1023,
+             f3OlmSessionMonitorStatsTotalPackets1024ToMtu,f3OlmSessionMonitorStatsMinDelay1024ToMtu,
+             f3OlmSessionMonitorStatsMaxDelay1024ToMtu,f3OlmSessionMonitorStatsAvgDelay1024ToMtu,
+             f3OlmSessionMonitorStatsSumTotalPackets,
+
+             f3OlmSessionMonitorHistoryIndex,f3OlmSessionMonitorHistoryTime,
+             f3OlmSessionMonitorHistoryValid,f3OlmSessionMonitorHistoryAction,
+             f3OlmSessionMonitorHistoryTotalPackets64To127,f3OlmSessionMonitorHistoryMinDelay64To127,
+             f3OlmSessionMonitorHistoryMaxDelay64To127,f3OlmSessionMonitorHistoryAvgDelay64To127,
+             f3OlmSessionMonitorHistoryTotalPackets128To255,f3OlmSessionMonitorHistoryMinDelay128To255,
+             f3OlmSessionMonitorHistoryMaxDelay128To255,f3OlmSessionMonitorHistoryAvgDelay128To255,
+             f3OlmSessionMonitorHistoryTotalPackets256To511,f3OlmSessionMonitorHistoryMinDelay256To511,
+             f3OlmSessionMonitorHistoryMaxDelay256To511,f3OlmSessionMonitorHistoryAvgDelay256To511,
+             f3OlmSessionMonitorHistoryMinDelay512To1023,f3OlmSessionMonitorHistoryMaxDelay512To1023,
+             f3OlmSessionMonitorHistoryAvgDelay512To1023,f3OlmSessionMonitorHistoryTotalPackets512To1023,
+             f3OlmSessionMonitorHistoryTotalPackets1024ToMtu,f3OlmSessionMonitorHistoryMinDelay1024ToMtu,
+             f3OlmSessionMonitorHistoryMaxDelay1024ToMtu,f3OlmSessionMonitorHistoryAvgDelay1024ToMtu,
+             f3OlmSessionMonitorHistorySumTotalPackets,
+
+             f3OlmSessionMonitorThresholdIndex,f3OlmSessionMonitorThresholdInterval,
+             f3OlmSessionMonitorThresholdVariable,f3OlmSessionMonitorThresholdValueLo,
+             f3OlmSessionMonitorThresholdValueHi,f3OlmSessionMonitorThresholdMonValue
+    }
+    STATUS  current
+    DESCRIPTION
+            "A collection of performance objects used to for the OLM statistics."
+    ::= { f3OlmGroups 2 }
+END

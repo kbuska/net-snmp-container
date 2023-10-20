@@ -1,0 +1,1051 @@
+F3-IPFIX-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32, IpAddress
+             FROM SNMPv2-SMI
+    RowStatus, StorageType, TruthValue,DisplayString,
+    VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    AdminState, OperationalState, SecondaryState,
+    VlanId, VlanPriority,IpVersion
+             FROM  CM-COMMON-MIB
+    neIndex
+             FROM CM-ENTITY-MIB
+    Ipv6Address
+             FROM  IPV6-TC
+    fsp150cm
+             FROM  ADVA-MIB; 
+
+f3IPFIXMIB MODULE-IDENTITY
+    LAST-UPDATED        "201703150000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the Ethernet Service Manager MIB defitinions
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "201703150000Z"
+    DESCRIPTION
+        "
+ Notes from release 201703150000Z
+           a) changed the f3IPFIXTemplateId range starting number from 256 to 300
+         Notes from release 201612120000Z
+           a) change the f3IPFIXObservationDomainId range from 0 to 1
+         Notes from release 201612060000Z
+           a) rename f3IPFIXTemplateMatchTCPFlagControl to f3IPFIXTemplateMatchTCPFlagsControl
+
+         Notes from release 201612050000Z
+           a) removed f3IPFIXExporterInterval from f3IPFIXExporterTable
+
+         Notes from release 201611170000Z
+           a) added the following columns to f3IPFIXMeteringProcessTable
+               -- f3IPFIXMeteringProcessSamplingAlgorithm
+               -- f3IPFIXMeteringProcessSamplingSize
+               -- f3IPFIXMeteringProcessSamplingPopulation
+
+         Notes from release 201611100000Z
+           a) added the following columns to f3IPFIXObservationPointTable
+              -- f3IPFIXObservationPointIdLo
+              -- f3IPFIXObservationPointIdHi
+
+         Notes from release 201609220000Z
+          a) fixed a typo - changed f3IPFIXTemplateMatchProtocolContorl to f3IPFIXTemplateMatchProtocolControl
+
+         Notes from release 201609230000Z
+          a) changed DomainType enumeration from serviceBased to flowBased
+
+         Notes from release 201609280000Z 
+          a) chagne the attbute f3IPFIXMeteringProcessAssociatedExportObject to  f3IPFIXMeteringProcessAssociatedExporter
+        " 
+
+    ::= {fsp150cm 44}
+
+-- 
+-- OID definitions
+-- 
+f3IPFIXConfigObjects      OBJECT IDENTIFIER ::= {f3IPFIXMIB 1}
+f3IPFIXConformance        OBJECT IDENTIFIER ::= {f3IPFIXMIB 2}
+
+
+DomainType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+          "Enumerations for Domain Type."
+    SYNTAX   INTEGER {
+               portBased(1),
+               flowBased(2)
+             }
+
+IpfixFlowDirectionType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+          "Enumerations for flow direction."
+    SYNTAX   INTEGER {
+               not-applicable(0),
+               a2n(1),
+               n2a(2)
+             }
+
+IpfixSamplingAlgorithm ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+          "Ipifx sampling algorithm type."
+    SYNTAX   INTEGER {
+               random-n-outof-N(1)
+             }
+
+
+--
+-- IPFIX Config Table
+--
+f3IPFIXTemplateTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3IPFIXTemplateEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3IPFIXConfigObjects 1 }
+
+f3IPFIXTemplateEntry OBJECT-TYPE
+    SYNTAX      F3IPFIXTemplateEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3IPFIXTemplateTable."
+    INDEX { neIndex, f3IPFIXTemplateIndex }
+   ::= { f3IPFIXTemplateTable 1 }
+
+F3IPFIXTemplateEntry ::= SEQUENCE {
+    f3IPFIXTemplateIndex                               Unsigned32,
+    f3IPFIXTemplateId                                  Unsigned32,
+    f3IPFIXTemplateAlias                               DisplayString,
+    f3IPFIXTemplateMatchVIDControl                     TruthValue,
+    f3IPFIXTemplateMatchSIPControl                     TruthValue,
+    f3IPFIXTemplateMatchSIPPrefixControl               TruthValue,
+    f3IPFIXTemplateMatchSIPPrefix                      Unsigned32,
+    f3IPFIXTemplateMatchDIPControl                     TruthValue,
+    f3IPFIXTemplateMatchDIPPrefixControl               TruthValue,
+    f3IPFIXTemplateMatchDIPPrefix                      Unsigned32,
+    f3IPFIXTemplateMatchProtocolControl                TruthValue,
+    f3IPFIXTemplateMatchTOSControl                     TruthValue,
+    f3IPFIXTemplateMatchTOSRangeControl                TruthValue,
+    f3IPFIXTemplateMatchTOSMin                         Unsigned32,
+    f3IPFIXTemplateMatchTOSMax                         Unsigned32,
+    f3IPFIXTemplateMatchTCPFlagsControl                TruthValue,
+    f3IPFIXTemplateMatchSrcPortControl                 TruthValue,
+    f3IPFIXTemplateMatchSrcPortRangeControl            TruthValue,
+    f3IPFIXTemplateMatchSrcPortRangeMin                Unsigned32,
+    f3IPFIXTemplateMatchSrcPortRangeMax                Unsigned32,
+    f3IPFIXTemplateMatchDstPortControl                 TruthValue,
+    f3IPFIXTemplateMatchDstPortRangeControl            TruthValue,
+    f3IPFIXTemplateMatchDstPortRangeMin                Unsigned32,
+    f3IPFIXTemplateMatchDstPortRangeMax                Unsigned32,
+    f3IPFIXTemplateStatisticFlowStartSysUpTimeControl  TruthValue,
+    f3IPFIXTemplateStatisticFlowEndSysUpTimeControl    TruthValue,
+    f3IPFIXTemplateStatisticOctetDeltaCountControl     TruthValue,
+    f3IPFIXTemplateStatisticPacketDeltaCountControl    TruthValue,
+    f3IPFIXTemplateStatisticMinTTLControl              TruthValue,
+    f3IPFIXTemplateStatisticMaxTTLControl              TruthValue,
+    f3IPFIXTemplateStatisticMinIpTotalLenControl       TruthValue,
+    f3IPFIXTemplateStatisticMaxIpTotalLenControl       TruthValue,
+    f3IPFIXTemplateStorageType                         StorageType,
+    f3IPFIXTemplateRowStatus                           RowStatus
+}
+
+f3IPFIXTemplateIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object unique identify one IPFIX template."
+    ::= { f3IPFIXTemplateEntry 1 }
+
+f3IPFIXTemplateId OBJECT-TYPE
+    SYNTAX      Unsigned32(300..65535)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IPFIX template id value."
+    ::= { f3IPFIXTemplateEntry 2 }
+
+f3IPFIXTemplateAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IPFIX template alias."
+    ::= { f3IPFIXTemplateEntry 3 }
+
+f3IPFIXTemplateMatchVIDControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Vlan Id."
+    ::= { f3IPFIXTemplateEntry 4 }
+
+f3IPFIXTemplateMatchSIPControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Source Ip Address."
+    ::= { f3IPFIXTemplateEntry 5 }
+
+f3IPFIXTemplateMatchSIPPrefixControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Source Ip Address Prefix."
+    ::= { f3IPFIXTemplateEntry 6 }
+
+f3IPFIXTemplateMatchSIPPrefix OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template match Source Ip Address Prefix value."
+    ::= { f3IPFIXTemplateEntry 7 }
+
+f3IPFIXTemplateMatchDIPControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Destination Ip Address."
+    ::= { f3IPFIXTemplateEntry 8 }
+
+f3IPFIXTemplateMatchDIPPrefixControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Destination Ip Address Prefix."
+    ::= { f3IPFIXTemplateEntry 9 }
+
+f3IPFIXTemplateMatchDIPPrefix OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template match Destination Ip Address Prefix value."
+    ::= { f3IPFIXTemplateEntry 10 }
+
+f3IPFIXTemplateMatchProtocolControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match protocol."
+    ::= { f3IPFIXTemplateEntry 11 }
+
+f3IPFIXTemplateMatchTOSControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match TOS."
+    ::= { f3IPFIXTemplateEntry 12 }
+
+f3IPFIXTemplateMatchTOSRangeControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether enable TOS range."
+    ::= { f3IPFIXTemplateEntry 13 }
+
+f3IPFIXTemplateMatchTOSMin OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template match TOS range min value."
+    ::= { f3IPFIXTemplateEntry 14 }
+
+f3IPFIXTemplateMatchTOSMax OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template match TOS range max vlaue."
+    ::= { f3IPFIXTemplateEntry 15 }
+
+f3IPFIXTemplateMatchTCPFlagsControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match TCP flag."
+    ::= { f3IPFIXTemplateEntry 16 }
+
+f3IPFIXTemplateMatchSrcPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match source port."
+    ::= { f3IPFIXTemplateEntry 17 }
+
+f3IPFIXTemplateMatchSrcPortRangeControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match source port mask."
+    ::= { f3IPFIXTemplateEntry 18 }
+
+f3IPFIXTemplateMatchSrcPortRangeMin OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match mix source port value."
+    ::= { f3IPFIXTemplateEntry 19 }
+
+f3IPFIXTemplateMatchSrcPortRangeMax OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match max source port value."
+    ::= { f3IPFIXTemplateEntry 20 }
+
+f3IPFIXTemplateMatchDstPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match destination port."
+    ::= { f3IPFIXTemplateEntry 21 }
+
+f3IPFIXTemplateMatchDstPortRangeControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match destination port mask."
+    ::= { f3IPFIXTemplateEntry 22 }
+
+f3IPFIXTemplateMatchDstPortRangeMin OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match mix destination port value."
+    ::= { f3IPFIXTemplateEntry 23 }
+
+f3IPFIXTemplateMatchDstPortRangeMax OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match max destination port value."
+    ::= { f3IPFIXTemplateEntry 24 }
+
+f3IPFIXTemplateStatisticFlowStartSysUpTimeControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match sys up time when flow statistic start."
+    ::= { f3IPFIXTemplateEntry 25 }
+
+f3IPFIXTemplateStatisticFlowEndSysUpTimeControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match sys up time when flow statistic stop."
+    ::= { f3IPFIXTemplateEntry 26 }
+
+f3IPFIXTemplateStatisticOctetDeltaCountControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match octet delta counter."
+    ::= { f3IPFIXTemplateEntry 27 }
+
+f3IPFIXTemplateStatisticPacketDeltaCountControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match packet delta counter."
+    ::= { f3IPFIXTemplateEntry 28 }
+
+f3IPFIXTemplateStatisticMinTTLControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Min TTL value."
+    ::= { f3IPFIXTemplateEntry 29 }
+
+f3IPFIXTemplateStatisticMaxTTLControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Max TTL value."
+    ::= { f3IPFIXTemplateEntry 30 }
+
+f3IPFIXTemplateStatisticMinIpTotalLenControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Min IP total Length."
+    ::= { f3IPFIXTemplateEntry 31 }
+
+f3IPFIXTemplateStatisticMaxIpTotalLenControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify current IPFIX template whether match Max IP total Length."
+    ::= { f3IPFIXTemplateEntry 32 }
+
+f3IPFIXTemplateStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3IPFIXTemplateEntry 33 }
+
+f3IPFIXTemplateRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3IPFIXTemplateRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3IPFIXTemplateRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3IPFIXTemplateRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3IPFIXTemplateEntry 34 }
+
+--
+-- IPFIX Config Table
+--
+f3IPFIXObservationDomainTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3IPFIXObservationDomainEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3IPFIXConfigObjects 2 }
+
+f3IPFIXObservationDomainEntry OBJECT-TYPE
+    SYNTAX      F3IPFIXObservationDomainEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3IPFIXObservationDomainTable."
+    INDEX { neIndex, f3IPFIXObservationDomainIndex }
+   ::= { f3IPFIXObservationDomainTable 1 }
+
+F3IPFIXObservationDomainEntry ::= SEQUENCE {
+    f3IPFIXObservationDomainIndex                               Unsigned32,
+    f3IPFIXObservationDomainId                                  Unsigned32,
+    f3IPFIXObservationDomainAlias                               DisplayString,
+    f3IPFIXObservationDomainType                                DomainType,
+    f3IPFIXObservationDomainStorageType                         StorageType,
+    f3IPFIXObservationDomainRowStatus                           RowStatus
+}
+
+f3IPFIXObservationDomainIndex OBJECT-TYPE
+    SYNTAX      Unsigned32(0..255)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object unique identify one IPFIX OB domain."
+    ::= { f3IPFIXObservationDomainEntry 1 }
+
+f3IPFIXObservationDomainId OBJECT-TYPE
+    SYNTAX      Unsigned32(1..65535)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This object IPFIX OB domain ID."
+    ::= { f3IPFIXObservationDomainEntry 2 }
+
+f3IPFIXObservationDomainAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IPFIX observation domain alias."
+    ::= { f3IPFIXObservationDomainEntry 3 }
+
+f3IPFIXObservationDomainType OBJECT-TYPE
+    SYNTAX      DomainType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This object specify IPFIX observation domain type"
+    ::= { f3IPFIXObservationDomainEntry 4 }
+
+f3IPFIXObservationDomainStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3IPFIXObservationDomainEntry 5 }
+
+f3IPFIXObservationDomainRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3IPFIXObservationDomainRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3IPFIXObservationDomainRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3IPFIXObservationDomainRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3IPFIXObservationDomainEntry 6 }
+
+--
+-- IPFIX Config Table
+--
+f3IPFIXObservationPointTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3IPFIXObservationPointEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3IPFIXConfigObjects 3 }
+
+f3IPFIXObservationPointEntry OBJECT-TYPE
+    SYNTAX      F3IPFIXObservationPointEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3IPFIXObservationPointTable."
+    INDEX { neIndex, f3IPFIXObservationDomainIndex, f3IPFIXObservationPointIndex }
+   ::= { f3IPFIXObservationPointTable 1 }
+
+F3IPFIXObservationPointEntry ::= SEQUENCE {
+    f3IPFIXObservationPointIndex                               Unsigned32,
+    f3IPFIXObservationPointAlias                               DisplayString,
+    f3IPFIXObservationPointAssociatedInterface                 VariablePointer,
+    f3IPFIXObservationPointFlowDirection                       IpfixFlowDirectionType,
+    f3IPFIXObservationPointAssociatedMeteringProcess           VariablePointer,
+    f3IPFIXObservationPointStorageType                         StorageType,
+    f3IPFIXObservationPointRowStatus                           RowStatus,
+    f3IPFIXObservationPointIdLo                                Unsigned32,
+    f3IPFIXObservationPointIdHi                                Unsigned32
+}
+
+f3IPFIXObservationPointIndex OBJECT-TYPE
+    SYNTAX      Unsigned32(0..255)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object unique identify one IPFIX OB point."
+    ::= { f3IPFIXObservationPointEntry 1 }
+
+f3IPFIXObservationPointAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IPFIX observation point alias."
+    ::= { f3IPFIXObservationPointEntry 2 }
+
+f3IPFIXObservationPointAssociatedInterface OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the associated interface."
+    ::= { f3IPFIXObservationPointEntry 3 }
+
+f3IPFIXObservationPointFlowDirection OBJECT-TYPE
+    SYNTAX      IpfixFlowDirectionType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "When the associated interface is flow, this object shows 
+           the flow whether a2n direction or n2a direciton."
+    ::= { f3IPFIXObservationPointEntry 4 }
+
+f3IPFIXObservationPointAssociatedMeteringProcess OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the associated metering process."
+    ::= { f3IPFIXObservationPointEntry 5 }
+
+f3IPFIXObservationPointStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3IPFIXObservationPointEntry 6 }
+
+f3IPFIXObservationPointRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3IPFIXObservationPointRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3IPFIXObservationPointRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3IPFIXObservationPointRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3IPFIXObservationPointEntry 7 }
+
+f3IPFIXObservationPointIdLo OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This object specifies low 32 bits of unique identify."
+    ::= { f3IPFIXObservationPointEntry 8 }
+
+f3IPFIXObservationPointIdHi OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "This object specifies high 32 bits of unique identify."
+    ::= { f3IPFIXObservationPointEntry 9 }
+
+
+
+--
+-- IPFIX Config Table
+--
+f3IPFIXMeteringProcessTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3IPFIXMeteringProcessEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3IPFIXConfigObjects 4 }
+
+f3IPFIXMeteringProcessEntry OBJECT-TYPE
+    SYNTAX      F3IPFIXMeteringProcessEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3IPFIXMeteringProcessTable."
+    INDEX { neIndex, f3IPFIXMeteringProcessIndex }
+   ::= { f3IPFIXMeteringProcessTable 1 }
+
+F3IPFIXMeteringProcessEntry ::= SEQUENCE {
+    f3IPFIXMeteringProcessIndex                               Unsigned32,
+    f3IPFIXMeteringProcessAlias                               DisplayString,
+    f3IPFIXMeteringProcessAssociatedTemplate                  VariablePointer,
+    f3IPFIXMeteringProcessAssociatedExporter                  VariablePointer,
+    f3IPFIXMeteringProcessActiveTimeout                       Unsigned32,
+    f3IPFIXMeteringProcessInactiveTimeout                     Unsigned32,
+    f3IPFIXMeteringProcessStorageType                         StorageType,
+    f3IPFIXMeteringProcessRowStatus                           RowStatus,
+    f3IPFIXMeteringProcessSamplingAlgorithm                   IpfixSamplingAlgorithm,
+    f3IPFIXMeteringProcessSamplingSize                        Unsigned32,
+    f3IPFIXMeteringProcessSamplingPopulation                  Unsigned32
+
+
+}
+
+f3IPFIXMeteringProcessIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object unique identify one IPFIX metering process."
+    ::= { f3IPFIXMeteringProcessEntry 1 }
+
+f3IPFIXMeteringProcessAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IPFIX metering process alias."
+    ::= { f3IPFIXMeteringProcessEntry 2 }
+
+f3IPFIXMeteringProcessAssociatedTemplate OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the associated template."
+    ::= { f3IPFIXMeteringProcessEntry 3 }
+
+f3IPFIXMeteringProcessAssociatedExporter OBJECT-TYPE
+    SYNTAX      VariablePointer
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the associated export."
+    ::= { f3IPFIXMeteringProcessEntry 4 }
+
+f3IPFIXMeteringProcessActiveTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The number of minutes that an active entry will stay 
+           in the cache before it is exported and removed."
+    ::= { f3IPFIXMeteringProcessEntry 5 }
+
+f3IPFIXMeteringProcessInactiveTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The number of minutes that an active entry will 
+           stay in the cache before it times out"
+    ::= { f3IPFIXMeteringProcessEntry 6 }
+
+f3IPFIXMeteringProcessStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3IPFIXMeteringProcessEntry 7 }
+
+f3IPFIXMeteringProcessRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3IPFIXMeteringProcessRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3IPFIXMeteringProcessRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3IPFIXMeteringProcessRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3IPFIXMeteringProcessEntry 8 }
+
+f3IPFIXMeteringProcessSamplingAlgorithm OBJECT-TYPE
+    SYNTAX      IpfixSamplingAlgorithm
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Sampling algorithm to be used."
+    ::= { f3IPFIXMeteringProcessEntry 9 }
+
+f3IPFIXMeteringProcessSamplingSize OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Sampling size to be used."
+    ::= { f3IPFIXMeteringProcessEntry 10 }
+
+f3IPFIXMeteringProcessSamplingPopulation OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Sampling population to be used."
+    ::= { f3IPFIXMeteringProcessEntry 11 }
+
+--
+-- IPFIX Export Table
+--
+f3IPFIXExporterTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3IPFIXExporterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs.
+         NOTE: This table is for FSPNM use only."
+   ::= { f3IPFIXConfigObjects 5 }
+
+f3IPFIXExporterEntry OBJECT-TYPE
+    SYNTAX      F3IPFIXExporterEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3IPFIXExporterTable."
+    INDEX { neIndex, f3IPFIXExporterIndex }
+   ::= { f3IPFIXExporterTable 1 }
+
+F3IPFIXExporterEntry ::= SEQUENCE {
+    f3IPFIXExporterIndex                          Unsigned32,
+    f3IPFIXExporterAlias                          DisplayString,
+    f3IPFIXExporterCollectorIpVersionA            IpVersion,
+    f3IPFIXExporterCollectorIpAddressA            IpAddress,
+    f3IPFIXExporterCollectorIpv6AddressA          Ipv6Address,
+    f3IPFIXExporterCollectorUDPPortA              Unsigned32,
+    f3IPFIXExporterCollectorIpVersionB            IpVersion,
+    f3IPFIXExporterCollectorIpAddressB            IpAddress,
+    f3IPFIXExporterCollectorIpv6AddressB          Ipv6Address,
+    f3IPFIXExporterCollectorUDPPortB              Unsigned32,
+    f3IPFIXExporterStorageType                    StorageType,
+    f3IPFIXExporterRowStatus                      RowStatus
+}
+
+f3IPFIXExporterIndex OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "This object unique identify one IPFIX exporter."
+    ::= { f3IPFIXExporterEntry 1 }
+
+f3IPFIXExporterAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify IPFIX exporter alias."
+    ::= { f3IPFIXExporterEntry 2 }
+
+
+f3IPFIXExporterCollectorIpVersionA OBJECT-TYPE
+    SYNTAX      IpVersion
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the first ip address ip version."
+    ::= { f3IPFIXExporterEntry 3 }
+
+f3IPFIXExporterCollectorIpAddressA OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the first collector ip address."
+    ::= { f3IPFIXExporterEntry 4 }
+
+f3IPFIXExporterCollectorIpv6AddressA OBJECT-TYPE
+    SYNTAX      Ipv6Address
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the first collector ipv6 address."
+    ::= { f3IPFIXExporterEntry 5 }
+
+f3IPFIXExporterCollectorUDPPortA OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the first collector UDP port."
+    ::= { f3IPFIXExporterEntry 6 }
+
+f3IPFIXExporterCollectorIpVersionB OBJECT-TYPE
+    SYNTAX      IpVersion
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the second collector ip address ip version."
+    ::= { f3IPFIXExporterEntry 7 }
+
+f3IPFIXExporterCollectorIpAddressB OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the second collector ip address."
+    ::= { f3IPFIXExporterEntry 8 }
+
+f3IPFIXExporterCollectorIpv6AddressB OBJECT-TYPE
+    SYNTAX      Ipv6Address
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the second collector ipv6 address."
+    ::= { f3IPFIXExporterEntry 9 }
+
+f3IPFIXExporterCollectorUDPPortB OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object specify the second collector UDP port."
+    ::= { f3IPFIXExporterEntry 10 }
+
+f3IPFIXExporterStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3IPFIXExporterEntry 11 }
+
+f3IPFIXExporterRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+          	
+          	The values of f3IPFIXExporterRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3IPFIXExporterRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+          	
+          	The f3IPFIXExporterRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3IPFIXExporterEntry 12 }
+
+
+--
+-- Conformance Section
+--
+f3IPFIXCompliances OBJECT IDENTIFIER ::= { f3IPFIXConformance 1 }
+f3IPFIXGroups      OBJECT IDENTIFIER ::= { f3IPFIXConformance 2 }
+
+f3IPFIXCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for compliance to the IPFIX Module."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3IPFIXGroup
+        }
+    ::= { f3IPFIXCompliances 1 }
+
+f3IPFIXGroup OBJECT-GROUP
+    OBJECTS {
+    f3IPFIXTemplateIndex,
+    f3IPFIXTemplateId,
+    f3IPFIXTemplateAlias,
+    f3IPFIXTemplateMatchVIDControl,
+    f3IPFIXTemplateMatchSIPControl,
+    f3IPFIXTemplateMatchSIPPrefixControl,
+    f3IPFIXTemplateMatchSIPPrefix,
+    f3IPFIXTemplateMatchDIPControl,
+    f3IPFIXTemplateMatchDIPPrefixControl,
+    f3IPFIXTemplateMatchDIPPrefix,
+    f3IPFIXTemplateMatchProtocolControl,
+    f3IPFIXTemplateMatchTOSControl,
+    f3IPFIXTemplateMatchTOSRangeControl,
+    f3IPFIXTemplateMatchTOSMin,
+    f3IPFIXTemplateMatchTOSMax,
+    f3IPFIXTemplateMatchTCPFlagsControl,
+    f3IPFIXTemplateMatchSrcPortControl,
+    f3IPFIXTemplateMatchSrcPortRangeControl,
+    f3IPFIXTemplateMatchSrcPortRangeMin,
+    f3IPFIXTemplateMatchSrcPortRangeMax,
+    f3IPFIXTemplateMatchDstPortControl,
+    f3IPFIXTemplateMatchDstPortRangeControl,
+    f3IPFIXTemplateMatchDstPortRangeMin,
+    f3IPFIXTemplateMatchDstPortRangeMax,
+    f3IPFIXTemplateStatisticFlowStartSysUpTimeControl,
+    f3IPFIXTemplateStatisticFlowEndSysUpTimeControl,
+    f3IPFIXTemplateStatisticOctetDeltaCountControl,
+    f3IPFIXTemplateStatisticPacketDeltaCountControl,
+    f3IPFIXTemplateStatisticMinTTLControl,
+    f3IPFIXTemplateStatisticMaxTTLControl,
+    f3IPFIXTemplateStatisticMinIpTotalLenControl,
+    f3IPFIXTemplateStatisticMaxIpTotalLenControl,
+    f3IPFIXTemplateStorageType,
+    f3IPFIXTemplateRowStatus,
+    f3IPFIXObservationDomainIndex,
+    f3IPFIXObservationDomainId,
+    f3IPFIXObservationDomainAlias,
+    f3IPFIXObservationDomainType,
+    f3IPFIXObservationDomainStorageType,
+    f3IPFIXObservationDomainRowStatus,    
+    f3IPFIXObservationPointIndex,
+    f3IPFIXObservationPointAlias,
+    f3IPFIXObservationPointAssociatedInterface,
+    f3IPFIXObservationPointAssociatedMeteringProcess,
+    f3IPFIXObservationPointStorageType,
+    f3IPFIXObservationPointRowStatus,
+    f3IPFIXObservationPointIdLo,
+    f3IPFIXObservationPointIdHi,
+    f3IPFIXMeteringProcessIndex,
+    f3IPFIXMeteringProcessAlias,
+    f3IPFIXMeteringProcessAssociatedTemplate,
+    f3IPFIXMeteringProcessAssociatedExporter,
+    f3IPFIXMeteringProcessActiveTimeout,
+    f3IPFIXMeteringProcessInactiveTimeout,
+    f3IPFIXMeteringProcessStorageType,
+    f3IPFIXMeteringProcessRowStatus,
+    f3IPFIXMeteringProcessSamplingAlgorithm,
+    f3IPFIXMeteringProcessSamplingSize,
+    f3IPFIXMeteringProcessSamplingPopulation,
+    f3IPFIXExporterIndex,
+    f3IPFIXExporterAlias,
+    f3IPFIXExporterCollectorIpVersionA,
+    f3IPFIXExporterCollectorIpAddressA,
+    f3IPFIXExporterCollectorIpv6AddressA,
+    f3IPFIXExporterCollectorUDPPortA,
+    f3IPFIXExporterCollectorIpVersionB,
+    f3IPFIXExporterCollectorIpAddressB,
+    f3IPFIXExporterCollectorIpv6AddressB,
+    f3IPFIXExporterCollectorUDPPortB,
+    f3IPFIXExporterStorageType,
+    f3IPFIXExporterRowStatus
+    }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects used to manage the FSP150CM IP Services."
+    ::= { f3IPFIXGroups 1 }
+
+END

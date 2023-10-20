@@ -1,0 +1,1967 @@
+F3-GRE-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32, IpAddress, Counter64
+             FROM SNMPv2-SMI
+    DateAndTime, MacAddress, RowStatus, StorageType, TruthValue,DisplayString,
+    VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    Ipv6Address
+             FROM IPV6-TC
+    AdminState, OperationalState, SecondaryState,
+    VlanId, VlanPriority,
+    CmPmIntervalType, CmPmBinAction, PerfCounter64
+             FROM  CM-COMMON-MIB
+    IpMode, IpEntryType
+             FROM  CM-IP-MIB
+    neIndex
+             FROM CM-ENTITY-MIB
+    fsp150cm
+             FROM  ADVA-MIB; 
+
+f3GreMIB MODULE-IDENTITY
+    LAST-UPDATED        "201508140000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the Ethernet Service Manager MIB defitinions
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "201508140000Z"
+    DESCRIPTION
+        "
+         Notes from release 201508140000Z." 
+
+    ::= {fsp150cm 46}
+
+--
+-- Textual Conventions
+--
+GreIpInterfaceActionType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Describes the action on GRE IP Interface."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   optimizeArpRetrieve(1),
+                   flushArpCache(2)
+                 }
+
+GreTunnelAction ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Gre tunnel action"
+    SYNTAX       INTEGER {
+                   notApplicable(0),
+                   ping (1),
+                   traceroute (2)
+                 }
+
+-- 
+-- OID definitions
+-- 
+f3GreConfigObjects      OBJECT IDENTIFIER ::= {f3GreMIB 1}
+f3GrePerformance        OBJECT IDENTIFIER ::= {f3GreMIB 2}
+f3GreNotifications      OBJECT IDENTIFIER ::= {f3GreMIB 3}
+f3GreConformance        OBJECT IDENTIFIER ::= {f3GreMIB 4}
+
+
+--
+--  GRE Tunnel Config Table
+--
+f3GreTunnelTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreTunnelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs."
+   ::= { f3GreConfigObjects 1 }
+
+f3GreTunnelEntry OBJECT-TYPE
+    SYNTAX      F3GreTunnelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3GreTunnelTable."
+    INDEX { neIndex, f3GreTunnelIndex }
+   ::= { f3GreTunnelTable 1 }
+
+F3GreTunnelEntry ::= SEQUENCE {
+    f3GreTunnelIndex                           Integer32,
+    f3GreTunnelAlias                           DisplayString,
+    f3GreTunnelAdminState                      AdminState,
+    f3GreTunnelOperationalState                OperationalState,
+    f3GreTunnelSecondaryState                  SecondaryState,
+    f3GreTunnelOuterVlanControl                TruthValue,
+    f3GreTunnelOuterVlanEtherType              Unsigned32,
+    f3GreTunnelOuterVlanId                     VlanId,
+    f3GreTunnelOuterVlanPri                    VlanPriority,
+    f3GreTunnelInnerVlanControl                TruthValue,
+    f3GreTunnelInnerVlanEtherType              Unsigned32,
+    f3GreTunnelInnerVlanId                     VlanId,
+    f3GreTunnelInnerVlanPri                    VlanPriority,
+    f3GreTunnelDscpValue                       Unsigned32,
+    f3GreTunnelRemoteIpv4Address               IpAddress,
+    f3GreTunnelStorageType                     StorageType,
+    f3GreTunnelRowStatus                       RowStatus,
+    f3GreTunnelIpInterfaceList                 DisplayString,
+    f3GreTunnelAction                          GreTunnelAction,
+    f3GreTunnelPingIpv4Destination             IpAddress,
+    f3GreTunnelTraceRouteIpv4Destination       IpAddress,
+    f3GreTunnelPingResult                      DisplayString,
+    f3GreTunnelTraceRouteResult                DisplayString,
+    f3GreTunnelKeyControl                      TruthValue,
+    f3GreTunnelKey                             Unsigned32,
+    f3GreTunnelFragmentationControl            TruthValue,
+    f3GreTunnelMaxReassemblyContexts           Integer32,
+    f3GreTunnelReassemblyTimeout               Integer32,
+    f3GreTunnelIpInterface                     VariablePointer,
+    f3GreTunnelPortInterface                   VariablePointer
+}
+
+f3GreTunnelIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An integer index value used to uniquely identify this EoMpls Gre Tunnel."
+   ::= { f3GreTunnelEntry 1 }
+
+f3GreTunnelAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This objects specify EoMpls GRE tunnel alias."
+   ::= { f3GreTunnelEntry 2 }
+
+f3GreTunnelAdminState OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This objects specify EoMpls GRE tunnel admin state."
+   ::= { f3GreTunnelEntry 3 }
+
+f3GreTunnelOperationalState OBJECT-TYPE
+    SYNTAX     OperationalState
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "This object represents the Operational State of the EoMpls GRE tunnel."
+     ::= { f3GreTunnelEntry 4 }
+
+f3GreTunnelSecondaryState OBJECT-TYPE
+    SYNTAX     SecondaryState
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "This object represents the Secondary State of the EoMpls GRE tunnel."
+     ::= { f3GreTunnelEntry 5 }
+
+f3GreTunnelOuterVlanControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes whether enable the outer vlan."
+     ::= { f3GreTunnelEntry 6 }
+
+f3GreTunnelOuterVlanEtherType OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes whether enable the outer vlan."
+     ::= { f3GreTunnelEntry 7 }
+
+f3GreTunnelOuterVlanId OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the outer vlan value."
+     ::= { f3GreTunnelEntry 8 }
+
+f3GreTunnelOuterVlanPri OBJECT-TYPE
+    SYNTAX     VlanPriority
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the outer vlan priority value."
+     ::= { f3GreTunnelEntry 9 }
+
+f3GreTunnelInnerVlanControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes whether enable the inner vlan."
+     ::= { f3GreTunnelEntry 10 }
+
+f3GreTunnelInnerVlanEtherType OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes whether enable the inner vlan."
+     ::= { f3GreTunnelEntry 11 }
+
+f3GreTunnelInnerVlanId OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the inner vlan value."
+     ::= { f3GreTunnelEntry 12 }
+
+f3GreTunnelInnerVlanPri OBJECT-TYPE
+    SYNTAX     VlanPriority
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the inner vlan priority value."
+     ::= { f3GreTunnelEntry 13 }
+
+f3GreTunnelDscpValue OBJECT-TYPE
+    SYNTAX     Unsigned32 (0..63)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the dscp value."
+     ::= { f3GreTunnelEntry 14 }
+
+f3GreTunnelRemoteIpv4Address OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the remote ipv4 address."
+     ::= { f3GreTunnelEntry 15 }
+
+f3GreTunnelStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3GreTunnelEntry 16 }
+
+f3GreTunnelRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+ 	
+          	The values of f3GreTunnelRowStatus supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3GreTunnelRowStatus value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+ 	
+          	The f3GreTunnelRowStatus object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3GreTunnelEntry 17 }
+
+f3GreTunnelIpInterfaceList OBJECT-TYPE
+    SYNTAX     DisplayString
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the Ip Interface list.
+         It should be f3GreIpInterfaceIndex value list split with comma.
+         for example, if the list includes f3GreIpInterfaceIndex.1.2, f3GreIpInterfaceIndex.1.5,
+         only need to set as 2,5."
+     ::= { f3GreTunnelEntry 18 }
+
+f3GreTunnelAction OBJECT-TYPE
+    SYNTAX     GreTunnelAction
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "The Gre Tunnel action, including ping and trace route."
+     ::= { f3GreTunnelEntry 19 }
+
+f3GreTunnelPingIpv4Destination OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "The ping destination."
+     ::= { f3GreTunnelEntry 20 }
+
+f3GreTunnelTraceRouteIpv4Destination OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "The trace route destination."
+     ::= { f3GreTunnelEntry 21 }
+
+f3GreTunnelPingResult OBJECT-TYPE
+    SYNTAX     DisplayString
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "The ping result."
+     ::= { f3GreTunnelEntry 22 }
+
+f3GreTunnelTraceRouteResult OBJECT-TYPE
+    SYNTAX     DisplayString
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "The trace route result."
+     ::= { f3GreTunnelEntry 23 }
+
+f3GreTunnelKeyControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "If Key field is present in GRE header."
+     ::= { f3GreTunnelEntry 24 }
+
+f3GreTunnelKey OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "GRE tunnel key value."
+     ::= { f3GreTunnelEntry 25 }
+
+f3GreTunnelFragmentationControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "Whether enable fragmentation control."
+     ::= { f3GreTunnelEntry 26 }
+
+f3GreTunnelMaxReassemblyContexts OBJECT-TYPE
+    SYNTAX     Integer32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "Maximum Reassembly contexts assigned for this tunnel."
+     ::= { f3GreTunnelEntry 27 }
+
+f3GreTunnelReassemblyTimeout OBJECT-TYPE
+    SYNTAX     Integer32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "Reassembly timeout value for this tunnel."
+     ::= { f3GreTunnelEntry 28 }
+
+f3GreTunnelIpInterface OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "GRE IP interface."
+     ::= { f3GreTunnelEntry 29 }
+
+f3GreTunnelPortInterface OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "GRE Port interface."
+     ::= { f3GreTunnelEntry 30 }
+
+
+--
+--  GRE Ip Interface Config Table
+--
+f3GreIpInterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreIpInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs."
+   ::= { f3GreConfigObjects 2 }
+
+f3GreIpInterfaceEntry OBJECT-TYPE
+    SYNTAX      F3GreIpInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3GreIpInterfaceTable."
+    INDEX { neIndex, f3GreIpInterfaceIndex }
+   ::= { f3GreIpInterfaceTable 1 }
+
+F3GreIpInterfaceEntry ::= SEQUENCE {
+    f3GreIpInterfaceIndex                           Integer32,
+    f3GreIpInterfaceName                            DisplayString,
+    f3GreIpInterfaceAdminState                      AdminState,
+    f3GreIpInterfaceOperationalState                OperationalState,
+    f3GreIpInterfaceSecondaryState                  SecondaryState,
+    f3GreIpInterfaceIpv4Address                     IpAddress,
+    f3GreIpInterfaceIpv4Mask                        IpAddress,
+    f3GreIpInterfaceDhcpControl                     TruthValue,
+    f3GreIpInterfaceAssociatedPort                  VariablePointer,
+    f3GreIpInterfaceOuterVlanControl                TruthValue,
+    f3GreIpInterfaceOuterVlanEtherType              Unsigned32,
+    f3GreIpInterfaceOuterVlanId                     VlanId,
+    f3GreIpInterfaceOuterVlanPri                    VlanPriority,
+    f3GreIpInterfaceInnerVlanControl                TruthValue,
+    f3GreIpInterfaceInnerVlanEtherType              Unsigned32,
+    f3GreIpInterfaceInnerVlanId                     VlanId,
+    f3GreIpInterfaceInnerVlanPri                    VlanPriority,
+    f3GreIpInterfaceStorageType                     StorageType,
+    f3GreIpInterfaceRowStatus                       RowStatus,
+    f3GreIpInterfaceDefaultGateway                  DisplayString,
+    f3GreIpInterfaceFragmentationControl            TruthValue,
+    f3GreIpInterfaceFragmentationMTU                Integer32,
+    f3GreIpInterfaceAction                          GreIpInterfaceActionType
+}
+
+f3GreIpInterfaceIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "An integer index value used to uniquely identify this EoMpls Gre ip interface."
+   ::= { f3GreIpInterfaceEntry 1 }
+
+f3GreIpInterfaceName OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..15))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This objects specify EoMpls GRE ip interface name."
+   ::= { f3GreIpInterfaceEntry 2 }
+
+f3GreIpInterfaceAdminState OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This objects specify EoMpls GRE ip interface admin state."
+   ::= { f3GreIpInterfaceEntry 3 }
+
+f3GreIpInterfaceOperationalState OBJECT-TYPE
+    SYNTAX     OperationalState
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "This object represents the Operational State of the EoMpls GRE ip interface."
+     ::= { f3GreIpInterfaceEntry 4 }
+
+f3GreIpInterfaceSecondaryState OBJECT-TYPE
+    SYNTAX     SecondaryState
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "This object represents the Secondary State of the EoMpls GRE ip interface."
+     ::= { f3GreIpInterfaceEntry 5 }
+
+f3GreIpInterfaceIpv4Address OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object represents the ip address of the EoMpls GRE ip interface."
+     ::= { f3GreIpInterfaceEntry 6 }
+
+f3GreIpInterfaceIpv4Mask OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object represents the ip address mask of the EoMpls GRE ip interface."
+     ::= { f3GreIpInterfaceEntry 7 }
+
+f3GreIpInterfaceDhcpControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object represents the ip interface dhcp whether enabled on the EoMpls GRE ip interface."
+     ::= { f3GreIpInterfaceEntry 8 }
+
+f3GreIpInterfaceAssociatedPort OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object represents the ip interface associated port on the EoMpls GRE ip interface."
+     ::= { f3GreIpInterfaceEntry 9 }
+
+f3GreIpInterfaceOuterVlanControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes whether enable the outer vlan."
+     ::= { f3GreIpInterfaceEntry 10 }
+
+f3GreIpInterfaceOuterVlanEtherType OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the outer vlan ether type."
+     ::= { f3GreIpInterfaceEntry 11 }
+
+f3GreIpInterfaceOuterVlanId OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the outer vlan value."
+     ::= { f3GreIpInterfaceEntry 12 }
+
+f3GreIpInterfaceOuterVlanPri OBJECT-TYPE
+    SYNTAX     VlanPriority
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the outer vlan priority value."
+     ::= { f3GreIpInterfaceEntry 13 }
+
+f3GreIpInterfaceInnerVlanControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes whether enable the inner vlan."
+     ::= { f3GreIpInterfaceEntry 14 }
+
+f3GreIpInterfaceInnerVlanEtherType OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the inner vlan ether type."
+     ::= { f3GreIpInterfaceEntry 15 }
+
+f3GreIpInterfaceInnerVlanId OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the inner vlan value."
+     ::= { f3GreIpInterfaceEntry 16 }
+
+f3GreIpInterfaceInnerVlanPri OBJECT-TYPE
+    SYNTAX     VlanPriority
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+         "This object describes the inner vlan priority value."
+     ::= { f3GreIpInterfaceEntry 17 }
+
+f3GreIpInterfaceStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3GreIpInterfaceEntry 18 }
+
+f3GreIpInterfaceRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+          	An entry MUST NOT exist in the active state unless all
+          	objects in the entry have an appropriate value, as described
+          	in the description clause for each writable object.
+ 	
+          	The values of f3GreIpInterfaceEntry supported are
+          	createAndGo(4) and destroy(6).  All mandatory attributes
+          	must be specified in a single SNMP SET request with
+          	f3GreIpInterfaceEntry value as createAndGo(4).
+          	Upon successful row creation, this object has a
+          	value of active(1).
+ 	
+          	The f3GreIpInterfaceEntry object may be modified if
+          	the associated instance of this object is equal to active(1)."
+    ::= { f3GreIpInterfaceEntry 19 }
+
+f3GreIpInterfaceDefaultGateway OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The default gateway list, split by comma."
+    ::= { f3GreIpInterfaceEntry 20 }
+
+f3GreIpInterfaceFragmentationControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Whether enable fragmentation control."
+    ::= { f3GreIpInterfaceEntry 21 }
+
+f3GreIpInterfaceFragmentationMTU OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object describes the fragmentation mtu value."
+    ::= { f3GreIpInterfaceEntry 22 }
+
+f3GreIpInterfaceAction OBJECT-TYPE
+    SYNTAX      GreIpInterfaceActionType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The Gre Ip Interface action, includes arp retrieve"
+    ::= { f3GreIpInterfaceEntry 23 }
+
+
+--
+--  GRE Loopback Interface Table
+--
+f3GreLoopbackInterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreLoopbackInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries with which FSPNM can associate some
+         information in the form of name-value pairs."
+   ::= { f3GreConfigObjects 3 }
+
+f3GreLoopbackInterfaceEntry OBJECT-TYPE
+    SYNTAX      F3GreLoopbackInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3GreLoopbackInterfaceTable."
+    INDEX { neIndex, f3GreLoopbackInterfaceIndex }
+   ::= { f3GreLoopbackInterfaceTable 1 }
+
+F3GreLoopbackInterfaceEntry ::= SEQUENCE {
+    f3GreLoopbackInterfaceIndex                           Integer32,
+    f3GreLoopbackInterfaceName                            DisplayString,
+    f3GreLoopbackIpMode                                   IpMode,
+    f3GreLoopbackInterfaceIpv4Address                     IpAddress,
+    f3GreLoopbackInterfaceIpv4Mask                        IpAddress,
+    f3GreLoopbackInterfaceIpv6Address                     Ipv6Address,
+    f3GreLoopbackInterfaceIpv6AddressPrefixLen            Integer32,
+    f3GreLoopbackInterfaceStorageType                     StorageType,
+    f3GreLoopbackInterfaceRowStatus                       RowStatus
+}
+
+f3GreLoopbackInterfaceIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "."
+   ::= { f3GreLoopbackInterfaceEntry 1 }
+
+f3GreLoopbackInterfaceName    OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..15))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+         "."
+     ::= { f3GreLoopbackInterfaceEntry 2 }
+
+f3GreLoopbackIpMode OBJECT-TYPE
+    SYNTAX     IpMode 
+    MAX-ACCESS read-write
+    STATUS   current
+    DESCRIPTION
+       "This object means the ip mode for the interface."
+    ::= { f3GreLoopbackInterfaceEntry 3 }
+
+f3GreLoopbackInterfaceIpv4Address OBJECT-TYPE
+    SYNTAX      IpAddress 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+         "."
+    ::= { f3GreLoopbackInterfaceEntry 4 }
+
+f3GreLoopbackInterfaceIpv4Mask OBJECT-TYPE
+    SYNTAX      IpAddress 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+         "."
+    ::= { f3GreLoopbackInterfaceEntry 5 }
+
+f3GreLoopbackInterfaceIpv6Address OBJECT-TYPE
+    SYNTAX      Ipv6Address 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+         "."
+    ::= { f3GreLoopbackInterfaceEntry 6 }
+
+f3GreLoopbackInterfaceIpv6AddressPrefixLen OBJECT-TYPE
+    SYNTAX      Integer32 
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+         "."
+    ::= { f3GreLoopbackInterfaceEntry 7 }
+    
+f3GreLoopbackInterfaceStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The storage type for this conceptual row."
+   ::= { f3GreLoopbackInterfaceEntry 8 }
+
+f3GreLoopbackInterfaceRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The status of this row.  An entry MUST NOT exist in the 
+        active state unless all objects in the entry have an 
+        appropriate value, as described
+        in the description clause for each writable object.
+
+        The values of f3GreLoopbackInterfaceRowStatus supported are
+        createAndGo(4) and destroy(6).  All mandatory attributes
+        must be specified in a single SNMP SET request with
+        f3GreLoopbackInterfaceRowStatus value as createAndGo(4).
+        Upon successful row creation, this object has a
+        value of active(1).
+
+        The f3GreLoopbackInterfaceRowStatus object may be modified if
+        the associated instance of this object is equal to active(1)."
+   ::= { f3GreLoopbackInterfaceEntry 9 }
+
+
+--
+--  GRE Arp Table 
+--
+f3GreArpTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreArpEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of GRE ARP entries on the NIDs."
+    ::= { f3GreConfigObjects 4 }
+
+f3GreArpEntry OBJECT-TYPE
+    SYNTAX      F3GreArpEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3GreArpTable. Entries can
+             be created/deleted in this table by management application action."
+    INDEX { neIndex, f3GreIpInterfaceIndex, f3GreArpIPAddress }
+    ::= { f3GreArpTable 1 }
+
+F3GreArpEntry ::= SEQUENCE {
+    f3GreArpIPAddress      IpAddress,
+    f3GreArpMacAddress     MacAddress,
+    f3GreArpInterface      DisplayString,
+    f3GreArpEntryType      IpEntryType,
+    f3GreArpStorageType    StorageType,
+    f3GreArpRowStatus      RowStatus
+}
+
+f3GreArpIPAddress OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+         "This object allows configuration of the ARP Entry IP Address."
+     ::= { f3GreArpEntry 1 }
+
+f3GreArpMacAddress OBJECT-TYPE
+    SYNTAX     MacAddress
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows management of the ARP Entry MAC Address."
+     ::= { f3GreArpEntry 2 }
+
+f3GreArpInterface OBJECT-TYPE
+    SYNTAX     DisplayString
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+         "This object allows management of the ARP Entry Interface."
+     ::= { f3GreArpEntry 3 }
+
+f3GreArpEntryType OBJECT-TYPE
+    SYNTAX     IpEntryType
+    MAX-ACCESS read-write 
+    STATUS     current
+    DESCRIPTION
+            "The type of ARP Entry. Note that static entries can be created."
+    ::= { f3GreArpEntry 4 }
+
+f3GreArpStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3GreArpEntry 5 }
+
+f3GreArpRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+             The f3GreArpRowStatus object may be modified if
+             the associated instance of this object is equal to active(1),
+             notInService(2), or notReady(3)."
+    ::= { f3GreArpEntry 6 }
+
+
+--
+--  Ip interface Current Statistics Table
+--
+f3GreIpInterfaceStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreIpInterfaceStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of EoMpls GreIpInterface related statistics.  
+             These reflect the current data."
+    ::= { f3GrePerformance 1 }
+
+f3GreIpInterfaceStatsEntry OBJECT-TYPE
+    SYNTAX      F3GreIpInterfaceStatsEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3GreIpInterfaceStatsTable.
+             Entries exist in this table for each EoMpls GreIpInterface."
+    INDEX { neIndex, f3GreIpInterfaceIndex, f3GreIpInterfaceStatsIndex }
+    ::= { f3GreIpInterfaceStatsTable 1 }
+
+F3GreIpInterfaceStatsEntry ::= SEQUENCE {
+    f3GreIpInterfaceStatsIndex                            Integer32,
+    f3GreIpInterfaceStatsIntervalType                     CmPmIntervalType,
+    f3GreIpInterfaceStatsValid                            TruthValue,
+    f3GreIpInterfaceStatsAction                           CmPmBinAction,
+    f3GreIpInterfaceStatsFragmentsReceivedFrames          PerfCounter64,
+    f3GreIpInterfaceStatsFragmentsReceivedBytes           PerfCounter64,
+    f3GreIpInterfaceStatsFragmentsDroppedFrames           PerfCounter64,
+    f3GreIpInterfaceStatsFragmentsDroppedBytes            PerfCounter64,
+    f3GreIpInterfaceStatsPacketsReassembledFrames         PerfCounter64,
+    f3GreIpInterfaceStatsPacketsReassembledBytes          PerfCounter64,
+    f3GreIpInterfaceStatsFragmentsTransmitsFrames         PerfCounter64,
+    f3GreIpInterfaceStatsFragmentsTransmitsBytes          PerfCounter64,
+    f3GreIpInterfaceStatsPreFragmentsTransmitsFrames      PerfCounter64,
+    f3GreIpInterfaceStatsPreFragmentsTransmitsBytes       PerfCounter64,
+    f3GreIpInterfaceStatsFragBytesNoReassemblyCtxtDrop    PerfCounter64,
+    f3GreIpInterfaceStatsFragFramesNoReassemblyCtxtDrop   PerfCounter64
+}
+
+f3GreIpInterfaceStatsIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this L3 flow point statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3GreIpInterfaceStatsEntry 1 }
+
+f3GreIpInterfaceStatsIntervalType OBJECT-TYPE
+    SYNTAX      CmPmIntervalType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Interval over which Performance Monitoring data is collected."
+    ::= { f3GreIpInterfaceStatsEntry 2 }
+
+f3GreIpInterfaceStatsValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3GreIpInterfaceStatsEntry 3 }
+
+f3GreIpInterfaceStatsAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3GreIpInterfaceStatsEntry 4 }
+
+f3GreIpInterfaceStatsFragmentsReceivedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames received."
+     ::= { f3GreIpInterfaceStatsEntry 5 }
+
+f3GreIpInterfaceStatsFragmentsReceivedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes received."
+     ::= { f3GreIpInterfaceStatsEntry 6 }
+
+f3GreIpInterfaceStatsFragmentsDroppedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames dropped."
+     ::= { f3GreIpInterfaceStatsEntry 7 }
+
+f3GreIpInterfaceStatsFragmentsDroppedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes dropped."
+     ::= { f3GreIpInterfaceStatsEntry 8 }
+
+f3GreIpInterfaceStatsPacketsReassembledFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassembled frames."
+     ::= { f3GreIpInterfaceStatsEntry 9 }
+
+f3GreIpInterfaceStatsPacketsReassembledBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassemabled bytes."
+     ::= { f3GreIpInterfaceStatsEntry 10 }
+
+f3GreIpInterfaceStatsFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames transmits."
+     ::= { f3GreIpInterfaceStatsEntry 11 }
+
+f3GreIpInterfaceStatsFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes transmits."
+     ::= { f3GreIpInterfaceStatsEntry 12 }
+
+f3GreIpInterfaceStatsPreFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments frames transmits."
+     ::= { f3GreIpInterfaceStatsEntry 13 }
+
+f3GreIpInterfaceStatsPreFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments bytes transmits."
+     ::= { f3GreIpInterfaceStatsEntry 14 }
+
+f3GreIpInterfaceStatsFragBytesNoReassemblyCtxtDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Bytes dropped due to no reassembly context."
+     ::= { f3GreIpInterfaceStatsEntry 15 }
+
+f3GreIpInterfaceStatsFragFramesNoReassemblyCtxtDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Frames dropped due to no reassembly context."
+     ::= { f3GreIpInterfaceStatsEntry 16 }
+
+--
+-- Gre ip interface history Statistics Table
+--
+f3GreIpInterfaceHistoryTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreIpInterfaceHistoryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of EoMpls related history statistics.  
+             These reflect the history data."
+    ::= { f3GrePerformance 2 }
+
+f3GreIpInterfaceHistoryEntry OBJECT-TYPE
+    SYNTAX      F3GreIpInterfaceHistoryEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3GreIpInterfaceHistoryTable.
+             Entries exist in this table for each L3 acl rule."
+    INDEX { neIndex, f3GreIpInterfaceIndex,
+            f3GreIpInterfaceStatsIndex, f3GreIpInterfaceHistoryIndex }
+    ::= { f3GreIpInterfaceHistoryTable 1 }
+
+F3GreIpInterfaceHistoryEntry ::= SEQUENCE {
+    f3GreIpInterfaceHistoryIndex                            Integer32,
+    f3GreIpInterfaceHistoryTime                             DateAndTime,
+    f3GreIpInterfaceHistoryValid                            TruthValue,
+    f3GreIpInterfaceHistoryAction                           CmPmBinAction,
+    f3GreIpInterfaceHistoryFragmentsReceivedFrames          PerfCounter64,
+    f3GreIpInterfaceHistoryFragmentsReceivedBytes           PerfCounter64,
+    f3GreIpInterfaceHistoryFragmentsDroppedFrames           PerfCounter64,
+    f3GreIpInterfaceHistoryFragmentsDroppedBytes            PerfCounter64,
+    f3GreIpInterfaceHistoryPacketsReassembledFrames         PerfCounter64,
+    f3GreIpInterfaceHistoryPacketsReassembledBytes          PerfCounter64,
+    f3GreIpInterfaceHistoryFragmentsTransmitsFrames         PerfCounter64,
+    f3GreIpInterfaceHistoryFragmentsTransmitsBytes          PerfCounter64,
+    f3GreIpInterfaceHistoryPreFragmentsTransmitsFrames      PerfCounter64,
+    f3GreIpInterfaceHistoryPreFragmentsTransmitsBytes       PerfCounter64,
+    f3GreIpInterfaceHistoryFragBytesNoReassemblyCtxtDrop    PerfCounter64,
+    f3GreIpInterfaceHistoryFragFramesNoReassemblyCtxtDrop   PerfCounter64
+}
+
+f3GreIpInterfaceHistoryIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this L3 flow point statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3GreIpInterfaceHistoryEntry 1 }
+
+f3GreIpInterfaceHistoryTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the time of history bin creation." 
+    ::= { f3GreIpInterfaceHistoryEntry 2 }
+
+f3GreIpInterfaceHistoryValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3GreIpInterfaceHistoryEntry 3 }
+
+f3GreIpInterfaceHistoryAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3GreIpInterfaceHistoryEntry 4 }
+
+f3GreIpInterfaceHistoryFragmentsReceivedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames received."
+     ::= { f3GreIpInterfaceHistoryEntry 5 }
+
+f3GreIpInterfaceHistoryFragmentsReceivedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes received."
+     ::= { f3GreIpInterfaceHistoryEntry 6 }
+
+f3GreIpInterfaceHistoryFragmentsDroppedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames dropped."
+     ::= { f3GreIpInterfaceHistoryEntry 7 }
+
+f3GreIpInterfaceHistoryFragmentsDroppedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes dropped."
+     ::= { f3GreIpInterfaceHistoryEntry 8 }
+
+f3GreIpInterfaceHistoryPacketsReassembledFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassembled frames."
+     ::= { f3GreIpInterfaceHistoryEntry 9 }
+
+f3GreIpInterfaceHistoryPacketsReassembledBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassemabled bytes."
+     ::= { f3GreIpInterfaceHistoryEntry 10 }
+
+f3GreIpInterfaceHistoryFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames transmits."
+     ::= { f3GreIpInterfaceHistoryEntry 11 }
+
+f3GreIpInterfaceHistoryFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes transmits."
+     ::= { f3GreIpInterfaceHistoryEntry 12 }
+
+f3GreIpInterfaceHistoryPreFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments frams transmits."
+     ::= { f3GreIpInterfaceHistoryEntry 13 }
+
+f3GreIpInterfaceHistoryPreFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments bytes transmits."
+     ::= { f3GreIpInterfaceHistoryEntry 14 }
+
+f3GreIpInterfaceHistoryFragBytesNoReassemblyCtxtDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Bytes dropped due to no reassembly context."
+     ::= { f3GreIpInterfaceHistoryEntry 15 }
+
+f3GreIpInterfaceHistoryFragFramesNoReassemblyCtxtDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "Frames dropped due to no reassembly context."
+     ::= { f3GreIpInterfaceHistoryEntry 16 }
+
+--
+-- GreIpInterface Threshold Table
+--
+f3GreIpInterfaceThresholdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreIpInterfaceThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A table of entries that allow manageability of EoMpls GreIpInterface Thresholds."
+    ::= { f3GrePerformance 3 }
+
+f3GreIpInterfaceThresholdEntry OBJECT-TYPE
+    SYNTAX      F3GreIpInterfaceThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3GreIpInterfaceThresholdTable."
+    INDEX { neIndex, f3GreIpInterfaceIndex,
+            f3GreIpInterfaceStatsIndex, f3GreIpInterfaceThresholdIndex }
+    ::= { f3GreIpInterfaceThresholdTable 1 }
+
+F3GreIpInterfaceThresholdEntry ::= SEQUENCE {
+    f3GreIpInterfaceThresholdIndex       Integer32,
+    f3GreIpInterfaceThresholdInterval    CmPmIntervalType,
+    f3GreIpInterfaceThresholdVariable    VariablePointer,
+    f3GreIpInterfaceThresholdValueLo     Unsigned32,
+    f3GreIpInterfaceThresholdValueHi     Unsigned32,
+    f3GreIpInterfaceThresholdMonValue    Counter64
+}
+
+f3GreIpInterfaceThresholdIndex OBJECT-TYPE
+    SYNTAX     Integer32 (1..65535)
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "An index that uniquely identifies an entry in the
+        f3GreIpInterfaceThresholdTable."
+    ::= { f3GreIpInterfaceThresholdEntry 1 }
+
+f3GreIpInterfaceThresholdInterval OBJECT-TYPE
+    SYNTAX     CmPmIntervalType
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The interval over which monitored value is
+        sampled and compared with the specified threshold."
+    ::= { f3GreIpInterfaceThresholdEntry 2 }
+
+f3GreIpInterfaceThresholdVariable OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The object identifier of the particular variable to be
+        sampled."
+    ::= { f3GreIpInterfaceThresholdEntry 3 }
+
+f3GreIpInterfaceThresholdValueLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Lower 32 bits of the threshold value."
+    ::= { f3GreIpInterfaceThresholdEntry 4 }
+
+f3GreIpInterfaceThresholdValueHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Higher 32 bits of the threshold value."
+    ::= { f3GreIpInterfaceThresholdEntry 5 }
+
+f3GreIpInterfaceThresholdMonValue OBJECT-TYPE
+    SYNTAX     Counter64
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Monitored value corresponding to f3GreIpInterfaceThresholdVariable."
+    ::= { f3GreIpInterfaceThresholdEntry 6 }
+
+--
+-- Gre Tunnel Current Statistics Table
+--
+f3GreTunnelStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreTunnelStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of EoMpls GreTunnel related statistics.  
+             These reflect the current data."
+    ::= { f3GrePerformance 4 }
+
+f3GreTunnelStatsEntry OBJECT-TYPE
+    SYNTAX      F3GreTunnelStatsEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3GreTunnelStatsTable.
+             Entries exist in this table for each EoMpls GreTunnel."
+    INDEX { neIndex, f3GreTunnelIndex, f3GreTunnelStatsIndex }
+    ::= { f3GreTunnelStatsTable 1 }
+
+F3GreTunnelStatsEntry ::= SEQUENCE {
+    f3GreTunnelStatsIndex                            Integer32,
+    f3GreTunnelStatsIntervalType                     CmPmIntervalType,
+    f3GreTunnelStatsValid                            TruthValue,
+    f3GreTunnelStatsAction                           CmPmBinAction,
+    f3GreTunnelStatsTtlEqual0Drop                    PerfCounter64,
+    f3GreTunnelStatsDestUnreachableDrop              PerfCounter64,
+    f3GreTunnelStatsDestIpMismatchDrop               PerfCounter64,
+    f3GreTunnelStatsGreVerMismatchDrop               PerfCounter64,
+    f3GreTunnelStatsFragmentsReceivedFrames          PerfCounter64,
+    f3GreTunnelStatsFragmentsReceivedBytes           PerfCounter64,
+    f3GreTunnelStatsFragmentsDroppedFrames           PerfCounter64,
+    f3GreTunnelStatsFragmentsDroppedBytes            PerfCounter64,
+    f3GreTunnelStatsPacketsReassembledFrames         PerfCounter64,
+    f3GreTunnelStatsPacketsReassembledBytes          PerfCounter64,
+    f3GreTunnelStatsFragmentsTransmitsFrames         PerfCounter64,
+    f3GreTunnelStatsFragmentsTransmitsBytes          PerfCounter64,
+    f3GreTunnelStatsPreFragmentsTransmitsFrames      PerfCounter64,
+    f3GreTunnelStatsPreFragmentsTransmitsBytes       PerfCounter64,
+    f3GreTunnelStatsOversizePacketDiscard            PerfCounter64
+}
+
+f3GreTunnelStatsIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this L3 flow point statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3GreTunnelStatsEntry 1 }
+
+f3GreTunnelStatsIntervalType OBJECT-TYPE
+    SYNTAX      CmPmIntervalType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Interval over which Performance Monitoring data is collected."
+    ::= { f3GreTunnelStatsEntry 2 }
+
+f3GreTunnelStatsValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3GreTunnelStatsEntry 3 }
+
+f3GreTunnelStatsAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3GreTunnelStatsEntry 4 }
+
+f3GreTunnelStatsTtlEqual0Drop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets dropped due to ttl equal to zero."
+     ::= { f3GreTunnelStatsEntry 5 }
+
+f3GreTunnelStatsDestUnreachableDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets dropped due to destination unreachable."
+     ::= { f3GreTunnelStatsEntry 6 }
+
+f3GreTunnelStatsDestIpMismatchDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets dropped due to destination ip mismatch."
+     ::= { f3GreTunnelStatsEntry 7 }
+
+f3GreTunnelStatsGreVerMismatchDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets dropped due to gre version mismatch."
+     ::= { f3GreTunnelStatsEntry 8 }
+
+f3GreTunnelStatsFragmentsReceivedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames received."
+     ::= { f3GreTunnelStatsEntry 9 }
+
+f3GreTunnelStatsFragmentsReceivedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes received."
+     ::= { f3GreTunnelStatsEntry 10 }
+
+f3GreTunnelStatsFragmentsDroppedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames dropped."
+     ::= { f3GreTunnelStatsEntry 11 }
+
+f3GreTunnelStatsFragmentsDroppedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes dropped."
+     ::= { f3GreTunnelStatsEntry 12 }
+
+f3GreTunnelStatsPacketsReassembledFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassembled frames."
+     ::= { f3GreTunnelStatsEntry 13 }
+
+f3GreTunnelStatsPacketsReassembledBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassembled bytes."
+     ::= { f3GreTunnelStatsEntry 14 }
+
+f3GreTunnelStatsFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames transmits."
+     ::= { f3GreTunnelStatsEntry 15 }
+
+f3GreTunnelStatsFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes transmits."
+     ::= { f3GreTunnelStatsEntry 16 }
+
+f3GreTunnelStatsPreFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments frames transmits."
+     ::= { f3GreTunnelStatsEntry 17 }
+
+f3GreTunnelStatsPreFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments bytes transmits."
+     ::= { f3GreTunnelStatsEntry 18 }
+     
+f3GreTunnelStatsOversizePacketDiscard OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of oversize packets discard."
+     ::= { f3GreTunnelStatsEntry 19 }
+
+--
+-- EoMpls GRE Tunnel history Statistics Table
+--
+f3GreTunnelHistoryTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreTunnelHistoryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of GRE related history statistics.  
+             These reflect the history data."
+    ::= { f3GrePerformance 5 }
+
+f3GreTunnelHistoryEntry OBJECT-TYPE
+    SYNTAX      F3GreTunnelHistoryEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3GreTunnelHistoryTable.
+             Entries exist in this table for each L3 acl rule."
+    INDEX { neIndex, f3GreTunnelIndex,
+            f3GreTunnelStatsIndex, f3GreTunnelHistoryIndex }
+    ::= { f3GreTunnelHistoryTable 1 }
+
+F3GreTunnelHistoryEntry ::= SEQUENCE {
+    f3GreTunnelHistoryIndex                            Integer32,
+    f3GreTunnelHistoryTime                             DateAndTime,
+    f3GreTunnelHistoryValid                            TruthValue,
+    f3GreTunnelHistoryAction                           CmPmBinAction,
+    f3GreTunnelHistoryTtlEqual0Drop                    PerfCounter64,
+    f3GreTunnelHistoryDestUnreachableDrop              PerfCounter64,
+    f3GreTunnelHistoryDestIpMismatchDrop               PerfCounter64,
+    f3GreTunnelHistoryGreVerMismatchDrop               PerfCounter64,
+    f3GreTunnelHistoryFragmentsReceivedFrames          PerfCounter64,
+    f3GreTunnelHistoryFragmentsReceivedBytes           PerfCounter64,
+    f3GreTunnelHistoryFragmentsDroppedFrames           PerfCounter64,
+    f3GreTunnelHistoryFragmentsDroppedBytes            PerfCounter64,
+    f3GreTunnelHistoryPacketsReassembledFrames         PerfCounter64,
+    f3GreTunnelHistoryPacketsReassembledBytes          PerfCounter64,
+    f3GreTunnelHistoryFragmentsTransmitsFrames         PerfCounter64,
+    f3GreTunnelHistoryFragmentsTransmitsBytes          PerfCounter64,
+    f3GreTunnelHistoryPreFragmentsTransmitsFrames      PerfCounter64,
+    f3GreTunnelHistoryPreFragmentsTransmitsBytes       PerfCounter64,
+    f3GreTunnelHistoryOversizePacketDiscard            PerfCounter64
+}
+
+f3GreTunnelHistoryIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this L3 flow point statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3GreTunnelHistoryEntry 1 }
+
+f3GreTunnelHistoryTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the time of history bin creation." 
+    ::= { f3GreTunnelHistoryEntry 2 }
+
+f3GreTunnelHistoryValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3GreTunnelHistoryEntry 3 }
+
+f3GreTunnelHistoryAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3GreTunnelHistoryEntry 4 }
+
+f3GreTunnelHistoryTtlEqual0Drop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets matching acl rule."
+     ::= { f3GreTunnelHistoryEntry 5 }
+
+f3GreTunnelHistoryDestUnreachableDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets dropped due to destination unreachable."
+     ::= { f3GreTunnelHistoryEntry 6 }
+
+f3GreTunnelHistoryDestIpMismatchDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets dropped due to destination ip mismatch."
+     ::= { f3GreTunnelHistoryEntry 7 }
+
+f3GreTunnelHistoryGreVerMismatchDrop OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets dropped due to gre version mismatch."
+     ::= { f3GreTunnelHistoryEntry 8 }
+
+f3GreTunnelHistoryFragmentsReceivedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames received."
+     ::= { f3GreTunnelHistoryEntry 9 }
+
+f3GreTunnelHistoryFragmentsReceivedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes received."
+     ::= { f3GreTunnelHistoryEntry 10 }
+
+f3GreTunnelHistoryFragmentsDroppedFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames dropped."
+     ::= { f3GreTunnelHistoryEntry 11 }
+
+f3GreTunnelHistoryFragmentsDroppedBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes dropped."
+     ::= { f3GreTunnelHistoryEntry 12 }
+
+f3GreTunnelHistoryPacketsReassembledFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassembled frames."
+     ::= { f3GreTunnelHistoryEntry 13 }
+
+f3GreTunnelHistoryPacketsReassembledBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets reassembled bytes."
+     ::= { f3GreTunnelHistoryEntry 14 }
+
+f3GreTunnelHistoryFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments frames transmits."
+     ::= { f3GreTunnelHistoryEntry 15 }
+
+f3GreTunnelHistoryFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of fragments bytes transmits."
+     ::= { f3GreTunnelHistoryEntry 16 }
+
+f3GreTunnelHistoryPreFragmentsTransmitsFrames OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments frams transmits."
+     ::= { f3GreTunnelHistoryEntry 17 }
+
+f3GreTunnelHistoryPreFragmentsTransmitsBytes OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of pre-fragments bytes transmits."
+     ::= { f3GreTunnelHistoryEntry 18 }
+     
+f3GreTunnelHistoryOversizePacketDiscard OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of oversize packets discard."
+     ::= { f3GreTunnelHistoryEntry 19 }
+
+--
+--  GRE Tunnel Threshold Table
+--
+f3GreTunnelThresholdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3GreTunnelThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A table of entries that allow manageability of GreTunnel Thresholds."
+    ::= { f3GrePerformance 6 }
+
+f3GreTunnelThresholdEntry OBJECT-TYPE
+    SYNTAX      F3GreTunnelThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3GreTunnelThresholdTable."
+    INDEX { neIndex, f3GreTunnelIndex,
+            f3GreTunnelStatsIndex, f3GreTunnelThresholdIndex }
+    ::= { f3GreTunnelThresholdTable 1 }
+
+F3GreTunnelThresholdEntry ::= SEQUENCE {
+    f3GreTunnelThresholdIndex       Integer32,
+    f3GreTunnelThresholdInterval    CmPmIntervalType,
+    f3GreTunnelThresholdVariable    VariablePointer,
+    f3GreTunnelThresholdValueLo     Unsigned32,
+    f3GreTunnelThresholdValueHi     Unsigned32,
+    f3GreTunnelThresholdMonValue    Counter64
+}
+
+f3GreTunnelThresholdIndex OBJECT-TYPE
+    SYNTAX     Integer32 (1..65535)
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "An index that uniquely identifies an entry in the
+        f3GreTunnelThresholdTable."
+    ::= { f3GreTunnelThresholdEntry 1 }
+
+f3GreTunnelThresholdInterval OBJECT-TYPE
+    SYNTAX     CmPmIntervalType
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The interval over which monitored value is
+        sampled and compared with the specified threshold."
+    ::= { f3GreTunnelThresholdEntry 2 }
+
+f3GreTunnelThresholdVariable OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The object identifier of the particular variable to be
+        sampled."
+    ::= { f3GreTunnelThresholdEntry 3 }
+
+f3GreTunnelThresholdValueLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Lower 32 bits of the threshold value."
+    ::= { f3GreTunnelThresholdEntry 4 }
+
+f3GreTunnelThresholdValueHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Higher 32 bits of the threshold value."
+    ::= { f3GreTunnelThresholdEntry 5 }
+
+f3GreTunnelThresholdMonValue OBJECT-TYPE
+    SYNTAX     Counter64
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Monitored value corresponding to f3GreTunnelThresholdVariable."
+    ::= { f3GreTunnelThresholdEntry 6 }
+
+---
+---Notifications
+---
+
+f3GreTunnelThresholdCrossingAlert NOTIFICATION-TYPE
+    OBJECTS {
+                f3GreTunnelThresholdIndex,       
+                f3GreTunnelThresholdInterval,
+                f3GreTunnelThresholdVariable,
+                f3GreTunnelThresholdValueLo,
+                f3GreTunnelThresholdValueHi,
+                f3GreTunnelThresholdMonValue
+            }
+    STATUS  current
+    DESCRIPTION
+            "This trap is sent each time a threshold on a Gre Tunnel condition
+             on an Gre tunnel is crossed."
+  ::= { f3GreNotifications 1 }
+
+f3GreIpInterfaceThresholdCrossingAlert NOTIFICATION-TYPE
+    OBJECTS {
+                f3GreIpInterfaceThresholdIndex,       
+                f3GreIpInterfaceThresholdInterval,
+                f3GreIpInterfaceThresholdVariable,
+                f3GreIpInterfaceThresholdValueLo,
+                f3GreIpInterfaceThresholdValueHi,
+                f3GreIpInterfaceThresholdMonValue
+            }
+    STATUS  current
+    DESCRIPTION
+            "This trap is sent each time a threshold on a PM condition
+             on an Gre ip interface is crossed."
+  ::= { f3GreNotifications 2 }
+
+--
+-- Conformance
+--
+f3GreCompliances OBJECT IDENTIFIER ::= {f3GreConformance 1}
+f3GreGroups      OBJECT IDENTIFIER ::= {f3GreConformance 2}
+
+f3GreCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-GRE-MIB compilance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3GreConfigGroup
+        }
+    ::= { f3GreCompliances 1 }
+
+f3GreConfigGroup OBJECT-GROUP
+   OBJECTS {
+    f3GreTunnelIndex,
+    f3GreTunnelAlias,
+    f3GreTunnelAdminState,
+    f3GreTunnelOperationalState,
+    f3GreTunnelSecondaryState,
+    f3GreTunnelOuterVlanControl,
+    f3GreTunnelOuterVlanEtherType,
+    f3GreTunnelOuterVlanId,
+    f3GreTunnelOuterVlanPri,
+    f3GreTunnelInnerVlanControl,
+    f3GreTunnelInnerVlanEtherType,
+    f3GreTunnelInnerVlanId,
+    f3GreTunnelInnerVlanPri,
+    f3GreTunnelDscpValue,
+    f3GreTunnelRemoteIpv4Address,
+    f3GreTunnelStorageType,
+    f3GreTunnelRowStatus,
+    f3GreTunnelIpInterfaceList,
+    f3GreTunnelAction,
+    f3GreTunnelPingIpv4Destination,
+    f3GreTunnelTraceRouteIpv4Destination,
+    f3GreTunnelPingResult,
+    f3GreTunnelTraceRouteResult,
+    f3GreTunnelKeyControl,
+    f3GreTunnelKey,
+    f3GreTunnelFragmentationControl,
+    f3GreTunnelMaxReassemblyContexts,
+    f3GreTunnelReassemblyTimeout,
+    f3GreTunnelIpInterface,
+    f3GreTunnelPortInterface,
+    
+    f3GreIpInterfaceIndex,
+    f3GreIpInterfaceName,
+    f3GreIpInterfaceAdminState,
+    f3GreIpInterfaceOperationalState,
+    f3GreIpInterfaceSecondaryState,
+    f3GreIpInterfaceIpv4Address,
+    f3GreIpInterfaceIpv4Mask,
+    f3GreIpInterfaceDhcpControl,
+    f3GreIpInterfaceAssociatedPort,
+    f3GreIpInterfaceOuterVlanControl,
+    f3GreIpInterfaceOuterVlanEtherType,
+    f3GreIpInterfaceOuterVlanId,
+    f3GreIpInterfaceOuterVlanPri,
+    f3GreIpInterfaceInnerVlanControl,
+    f3GreIpInterfaceInnerVlanEtherType,
+    f3GreIpInterfaceInnerVlanId,
+    f3GreIpInterfaceInnerVlanPri,
+    f3GreIpInterfaceStorageType,
+    f3GreIpInterfaceRowStatus,
+    f3GreIpInterfaceDefaultGateway,
+    f3GreIpInterfaceFragmentationControl,
+    f3GreIpInterfaceFragmentationMTU,
+    f3GreIpInterfaceAction,
+    
+    f3GreLoopbackInterfaceIndex,
+    f3GreLoopbackInterfaceName,
+    f3GreLoopbackIpMode,
+    f3GreLoopbackInterfaceIpv4Address,
+    f3GreLoopbackInterfaceIpv4Mask,
+    f3GreLoopbackInterfaceIpv6Address,
+    f3GreLoopbackInterfaceIpv6AddressPrefixLen,
+    f3GreLoopbackInterfaceStorageType,
+    f3GreLoopbackInterfaceRowStatus,
+    
+    f3GreArpIPAddress,
+    f3GreArpMacAddress,
+    f3GreArpInterface,
+    f3GreArpEntryType,
+    f3GreArpStorageType,
+    f3GreArpRowStatus,
+    
+    f3GreIpInterfaceStatsIndex,
+    f3GreIpInterfaceStatsIntervalType,
+    f3GreIpInterfaceStatsValid,
+    f3GreIpInterfaceStatsAction,
+    f3GreIpInterfaceStatsFragmentsReceivedFrames,
+    f3GreIpInterfaceStatsFragmentsReceivedBytes,
+    f3GreIpInterfaceStatsFragmentsDroppedFrames,
+    f3GreIpInterfaceStatsFragmentsDroppedBytes,
+    f3GreIpInterfaceStatsPacketsReassembledFrames,
+    f3GreIpInterfaceStatsPacketsReassembledBytes,
+    f3GreIpInterfaceStatsFragmentsTransmitsFrames,
+    f3GreIpInterfaceStatsFragmentsTransmitsBytes,
+    f3GreIpInterfaceStatsPreFragmentsTransmitsFrames,
+    f3GreIpInterfaceStatsPreFragmentsTransmitsBytes,
+    f3GreIpInterfaceStatsFragBytesNoReassemblyCtxtDrop,
+    f3GreIpInterfaceStatsFragFramesNoReassemblyCtxtDrop,
+
+    f3GreIpInterfaceHistoryIndex,
+    f3GreIpInterfaceHistoryTime,
+    f3GreIpInterfaceHistoryValid,
+    f3GreIpInterfaceHistoryAction,
+    f3GreIpInterfaceHistoryFragmentsReceivedFrames,
+    f3GreIpInterfaceHistoryFragmentsReceivedBytes,
+    f3GreIpInterfaceHistoryFragmentsDroppedFrames,
+    f3GreIpInterfaceHistoryFragmentsDroppedBytes,
+    f3GreIpInterfaceHistoryPacketsReassembledFrames,
+    f3GreIpInterfaceHistoryPacketsReassembledBytes,
+    f3GreIpInterfaceHistoryFragmentsTransmitsFrames,
+    f3GreIpInterfaceHistoryFragmentsTransmitsBytes,
+    f3GreIpInterfaceHistoryPreFragmentsTransmitsFrames,
+    f3GreIpInterfaceHistoryPreFragmentsTransmitsBytes,
+    f3GreIpInterfaceHistoryFragBytesNoReassemblyCtxtDrop,
+    f3GreIpInterfaceHistoryFragFramesNoReassemblyCtxtDrop,
+
+    f3GreTunnelStatsIndex,
+    f3GreTunnelStatsIntervalType,
+    f3GreTunnelStatsValid,
+    f3GreTunnelStatsAction,
+    f3GreTunnelStatsTtlEqual0Drop,
+    f3GreTunnelStatsDestUnreachableDrop,
+    f3GreTunnelStatsDestIpMismatchDrop,
+    f3GreTunnelStatsGreVerMismatchDrop,
+    f3GreTunnelStatsFragmentsReceivedFrames,
+    f3GreTunnelStatsFragmentsReceivedBytes,
+    f3GreTunnelStatsFragmentsDroppedFrames,
+    f3GreTunnelStatsFragmentsDroppedBytes,
+    f3GreTunnelStatsPacketsReassembledFrames,
+    f3GreTunnelStatsPacketsReassembledBytes,
+    f3GreTunnelStatsFragmentsTransmitsFrames,
+    f3GreTunnelStatsFragmentsTransmitsBytes,
+    f3GreTunnelStatsPreFragmentsTransmitsFrames,
+    f3GreTunnelStatsPreFragmentsTransmitsBytes,
+    f3GreTunnelStatsOversizePacketDiscard,
+
+    f3GreTunnelHistoryIndex,
+    f3GreTunnelHistoryTime,
+    f3GreTunnelHistoryValid,
+    f3GreTunnelHistoryAction,
+    f3GreTunnelHistoryTtlEqual0Drop,
+    f3GreTunnelHistoryDestUnreachableDrop,
+    f3GreTunnelHistoryDestIpMismatchDrop,
+    f3GreTunnelHistoryGreVerMismatchDrop,
+    f3GreTunnelHistoryFragmentsReceivedFrames,
+    f3GreTunnelHistoryFragmentsReceivedBytes,
+    f3GreTunnelHistoryFragmentsDroppedFrames,
+    f3GreTunnelHistoryFragmentsDroppedBytes,
+    f3GreTunnelHistoryPacketsReassembledFrames,
+    f3GreTunnelHistoryPacketsReassembledBytes,
+    f3GreTunnelHistoryFragmentsTransmitsFrames,
+    f3GreTunnelHistoryFragmentsTransmitsBytes,
+    f3GreTunnelHistoryPreFragmentsTransmitsFrames,
+    f3GreTunnelHistoryPreFragmentsTransmitsBytes,
+    f3GreTunnelHistoryOversizePacketDiscard,
+
+    f3GreTunnelThresholdIndex,       
+    f3GreTunnelThresholdInterval,
+    f3GreTunnelThresholdVariable,
+    f3GreTunnelThresholdValueLo,
+    f3GreTunnelThresholdValueHi,
+    f3GreTunnelThresholdMonValue,
+    f3GreIpInterfaceThresholdIndex,       
+    f3GreIpInterfaceThresholdInterval,
+    f3GreIpInterfaceThresholdVariable,
+    f3GreIpInterfaceThresholdValueLo,
+    f3GreIpInterfaceThresholdValueHi,
+    f3GreIpInterfaceThresholdMonValue
+   }
+   STATUS  current
+   DESCRIPTION
+             "A collection of objects used to manage the GRE Configuration objects."
+    ::= { f3GreGroups 1 }
+
+END

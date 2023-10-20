@@ -1,0 +1,918 @@
+F3-NAT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP 
+             FROM SNMPv2-CONF
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32
+             FROM SNMPv2-SMI
+    RowStatus, StorageType, DisplayString,
+    VariablePointer, TEXTUAL-CONVENTION, TruthValue, MacAddress
+             FROM SNMPv2-TC
+    fsp150cm
+             FROM  ADVA-MIB
+    IpVersion, F3DisplayString
+             FROM  CM-COMMON-MIB
+    neIndex
+             FROM CM-ENTITY-MIB
+    f3VrfEntry, f3VrfIndex
+             FROM F3-L3-MIB;
+
+f3NATMIB MODULE-IDENTITY
+    LAST-UPDATED        "201811160000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the NAT MIB defitinions
+             used by the F3 (FSP150CM/CC) product lines.  
+             Copyright (C) ADVA."
+    REVISION        "201811160000Z"
+    DESCRIPTION
+        "
+         Notes from release 201811160000Z." 
+
+    ::= {fsp150cm 52}
+
+-- 
+-- OID definitions
+-- 
+f3NatConfigObjects      OBJECT IDENTIFIER ::= {f3NATMIB 1}
+f3NatConformance        OBJECT IDENTIFIER ::= {f3NATMIB 2}
+
+--
+-- Textual Conventions
+--
+NatInstanceActionType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "Describes the action on NAT instance."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   optimizeNatSessionRetrieve(1)
+                 }
+
+NatType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "NAT Type Definition."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   basicNat44 (1),
+                   napt44 (2),
+                   dstNat (3)
+                 }
+
+NatEntryType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "NAT Entry Type Definition."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   static (1),
+                   dynamic (2)
+                 }
+
+NatMappingProtocolType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "NAT Entry Type Definition."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   icmp (1),
+                   udp (2),
+                   tcp (3),
+                   all (4)
+                 }
+
+NatSessionProtocolType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+        "NAT Entry Type Definition."
+    SYNTAX       INTEGER {
+                   notApplicable (0),
+                   icmp (1),
+                   udp (2),
+                   tcp (3),
+                   others (4)
+                 }
+
+
+--
+-- NAT System Table
+--
+f3NatSystemTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3NatSystemEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for NAT System."
+   ::= { f3NatConfigObjects 1 }
+
+f3NatSystemEntry OBJECT-TYPE
+    SYNTAX      F3NatSystemEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3NatSystemTable."
+    AUGMENTS { f3VrfEntry }
+   ::= { f3NatSystemTable 1 }
+
+F3NatSystemEntry ::= SEQUENCE {
+    f3NatSystemUdpTimeout                Unsigned32,
+    f3NatSystemIcmpTimeout               Unsigned32,
+    f3NatSystemTcpIdleTimeout            Unsigned32
+}
+
+f3NatSystemUdpTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "UDP inactivity timeout. That is the time a mapping
+					  will stay active without packets traversing the NAT."
+    ::= { f3NatSystemEntry 1 }
+
+f3NatSystemIcmpTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "An ICMP Query session timer must not expire
+					  in less than 60 seconds. It is recommended
+					  that the ICMP Query session timer be made
+					  configurable."
+    ::= { f3NatSystemEntry 2 }
+
+f3NatSystemTcpIdleTimeout OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "TCP Idle timeout should be 2 hours and 4 minutes."
+    ::= { f3NatSystemEntry 3 }
+
+
+--
+-- NAT Instance Table
+--
+f3NatInstanceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3NatInstanceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for NAT Instance."
+
+   ::= { f3NatConfigObjects 2 }
+
+f3NatInstanceEntry OBJECT-TYPE
+    SYNTAX      F3NatInstanceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3NatInstanceTable."
+    INDEX { neIndex, f3VrfIndex, f3NatInstanceIndex }
+   ::= { f3NatInstanceTable 1 }
+
+F3NatInstanceEntry ::= SEQUENCE {
+    f3NatInstanceIndex                Integer32,
+    f3NatInstanceName                 F3DisplayString,
+    f3NatInstanceEnabled              TruthValue,
+    f3NatInstanceType                 NatType,
+    f3NatInstanceAction               NatInstanceActionType,
+    f3NatInstanceStorageType          StorageType,
+    f3NatInstanceRowStatus            RowStatus
+}
+
+f3NatInstanceIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The NAT Instance number."
+    ::= { f3NatInstanceEntry 1 }
+
+f3NatInstanceName OBJECT-TYPE
+    SYNTAX      F3DisplayString (SIZE (0..255))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Name of the NAT interface."
+    ::= { f3NatInstanceEntry 2 }
+
+f3NatInstanceEnabled OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Status of the the NAT instance."
+    ::= { f3NatInstanceEntry 3 }
+
+f3NatInstanceType OBJECT-TYPE
+    SYNTAX      NatType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Specify the NAT type for this instance."
+    ::= { f3NatInstanceEntry 4 }
+
+f3NatInstanceAction OBJECT-TYPE
+    SYNTAX      NatInstanceActionType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The Nat Instance action."
+    ::= { f3NatInstanceEntry 5 }
+
+f3NatInstanceStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3NatInstanceEntry 6 }
+
+f3NatInstanceRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3NatInstanceRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3NatInstanceRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3NatInstanceRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3NatInstanceEntry 7 }
+
+
+--
+-- NAT Mapping Entry Table
+--
+f3NatMappingEntryTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3NatMappingEntryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for NAT Mapping Entry."
+   ::= { f3NatConfigObjects 3 }
+
+f3NatMappingEntryEntry OBJECT-TYPE
+    SYNTAX      F3NatMappingEntryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3NatMappingEntryTable."
+    INDEX { neIndex, f3VrfIndex, f3NatInstanceIndex, f3NatMappingEntryIndex }
+   ::= { f3NatMappingEntryTable 1 }
+
+F3NatMappingEntryEntry ::= SEQUENCE {
+    f3NatMappingEntryIndex                Integer32,
+    f3NatMappingEntryType                 NatEntryType,
+    f3NatMappingEntryProtocol             NatMappingProtocolType,
+    f3NatMappingEntryInternalSrcAddress   F3DisplayString,
+    f3NatMappingEntryInternalSrcPortFrom  Unsigned32,
+    f3NatMappingEntryInternalSrcPortTo    Unsigned32,
+    f3NatMappingEntryExternalSrcAddress   F3DisplayString,
+    f3NatMappingEntryExternalSrcPortFrom  Unsigned32,
+    f3NatMappingEntryExternalSrcPortTo    Unsigned32,
+    f3NatMappingEntryStorageType          StorageType,
+    f3NatMappingEntryRowStatus            RowStatus
+}
+
+f3NatMappingEntryIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The NAT Mapping Entry number."
+    ::= { f3NatMappingEntryEntry 1 }
+
+f3NatMappingEntryType OBJECT-TYPE
+    SYNTAX      NatEntryType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This parameter can be used to 
+            set up static or dynamic address maps."
+    ::= { f3NatMappingEntryEntry 2 }
+
+f3NatMappingEntryProtocol OBJECT-TYPE
+    SYNTAX      NatMappingProtocolType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Specify Specify protocol identifiers."
+    ::= { f3NatMappingEntryEntry 3 }
+
+f3NatMappingEntryInternalSrcAddress OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Corresponds to the source IPv4/IPv6 address/prefix of the packet 
+            received on an internal interface. Now only IPv4 is available."
+    ::= { f3NatMappingEntryEntry 4 }
+
+f3NatMappingEntryInternalSrcPortFrom OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Corresponds to the start source port of the packet received 
+            on an internal interface. It is used also to indicate the 
+            internal source ICMP identifier."
+    ::= { f3NatMappingEntryEntry 5 }
+
+f3NatMappingEntryInternalSrcPortTo OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Corresponds to the end source port of the packet received 
+            on an internal interface. It is used also to indicate the 
+            internal source ICMP identifier."
+    ::= { f3NatMappingEntryEntry 6 }
+
+f3NatMappingEntryExternalSrcAddress OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Corresponds to the Source IP address/prefix of the packet sent
+            on an external interface of the NAT. Now only IPv4 is available."
+    ::= { f3NatMappingEntryEntry 7 }
+
+f3NatMappingEntryExternalSrcPortFrom OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Corresponds to the Start Source port of the packet sent on 
+            an external interface of the NAT. It is used also to indicate
+            the external source ICMP identifier."
+    ::= { f3NatMappingEntryEntry 8 }
+
+f3NatMappingEntryExternalSrcPortTo OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Corresponds to the End Source port of the packet sent on 
+            an external interface of the NAT. It is used also to indicate
+            the external source ICMP identifier."
+    ::= { f3NatMappingEntryEntry 9 }
+
+f3NatMappingEntryStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3NatMappingEntryEntry 10 }
+
+f3NatMappingEntryRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3NatMappingEntryRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3NatMappingEntryRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3NatMappingEntryRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3NatMappingEntryEntry 11 }
+
+
+--
+-- NAT Policy Table
+--
+f3NatPolicyTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3NatPolicyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for NAT Policy."
+   ::= { f3NatConfigObjects 4 }
+
+f3NatPolicyEntry OBJECT-TYPE
+    SYNTAX      F3NatPolicyEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3NatPolicyTable."
+    INDEX { neIndex, f3VrfIndex, f3NatInstanceIndex, f3NatPolicyIndex }
+   ::= { f3NatPolicyTable 1 }
+
+F3NatPolicyEntry ::= SEQUENCE {
+    f3NatPolicyIndex                Integer32,
+    f3NatPolicyExternalIpInterface  F3DisplayString,
+    f3NatPolicyStorageType          StorageType,
+    f3NatPolicyRowStatus            RowStatus
+}
+
+f3NatPolicyIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The NAT Policy number."
+    ::= { f3NatPolicyEntry 1 }
+
+f3NatPolicyExternalIpInterface OBJECT-TYPE
+    SYNTAX      F3DisplayString (SIZE (0..15))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Specify the External Interface Name for the NAT Policy."
+    ::= { f3NatPolicyEntry 2 }
+
+f3NatPolicyStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3NatPolicyEntry 3 }
+
+f3NatPolicyRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3NatPolicyRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3NatPolicyRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3NatPolicyRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3NatPolicyEntry 4 }
+
+
+--
+-- NAT external-ip-address-pool Table
+--
+f3NatExternalIpAddressPoolTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3NatExternalIpAddressPoolEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for NAT External IP Address Pool."
+
+   ::= { f3NatConfigObjects 5 }
+
+f3NatExternalIpAddressPoolEntry OBJECT-TYPE
+    SYNTAX      F3NatExternalIpAddressPoolEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3NatExternalIpAddressPoolTable."
+    INDEX { neIndex, f3VrfIndex, f3NatInstanceIndex, 
+            f3NatPolicyIndex, f3NatExternalIpAddressPoolIndex }
+   ::= { f3NatExternalIpAddressPoolTable 1 }
+
+F3NatExternalIpAddressPoolEntry ::= SEQUENCE {
+    f3NatExternalIpAddressPoolIndex         Integer32,
+    f3NatExternalIpAddressPool              F3DisplayString,
+    f3NatExternalIpAddressPoolStorageType   StorageType,
+    f3NatExternalIpAddressPoolRowStatus     RowStatus
+}
+
+f3NatExternalIpAddressPoolIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The NAT External IP Address Pool number."
+    ::= { f3NatExternalIpAddressPoolEntry 1 }
+
+f3NatExternalIpAddressPool OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "An IPv4 prefix used for NAT purposes."
+    ::= { f3NatExternalIpAddressPoolEntry 2 }
+
+f3NatExternalIpAddressPoolStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3NatExternalIpAddressPoolEntry 3 }
+
+f3NatExternalIpAddressPoolRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3NatExternalIpAddressPoolRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3NatExternalIpAddressPoolRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3NatExternalIpAddressPoolRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3NatExternalIpAddressPoolEntry 4 }
+
+
+--
+-- NAT destination-ip-address-pool Table
+--
+f3NatDestinationIpAddressPoolTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3NatDestinationIpAddressPoolEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for NAT Destination IP Address Pool."
+   ::= { f3NatConfigObjects 6 }
+
+f3NatDestinationIpAddressPoolEntry OBJECT-TYPE
+    SYNTAX      F3NatDestinationIpAddressPoolEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3NatDestinationIpAddressPoolTable."
+    INDEX { neIndex, f3VrfIndex, f3NatInstanceIndex, 
+            f3NatPolicyIndex, f3NatDestinationIpAddressPoolIndex }
+   ::= { f3NatDestinationIpAddressPoolTable 1 }
+
+F3NatDestinationIpAddressPoolEntry ::= SEQUENCE {
+    f3NatDestinationIpAddressPoolIndex         Integer32,
+    f3NatDestinationInIpAddressPool            F3DisplayString,
+    f3NatDestinationOutIpAddressPool           F3DisplayString,
+    f3NatDestinationIpAddressPoolStorageType   StorageType,
+    f3NatDestinationIpAddressPoolRowStatus     RowStatus
+}
+
+f3NatDestinationIpAddressPoolIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The NAT Destination IP Address Pool number."
+    ::= { f3NatDestinationIpAddressPoolEntry 1 }
+
+f3NatDestinationInIpAddressPool OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "Is used to identify an internal Destination IP prefix/address to be."
+    ::= { f3NatDestinationIpAddressPoolEntry 2 }
+
+f3NatDestinationOutIpAddressPool OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "IP address/prefix used for destination NAT."
+    ::= { f3NatDestinationIpAddressPoolEntry 3 }
+
+f3NatDestinationIpAddressPoolStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3NatDestinationIpAddressPoolEntry 4 }
+
+f3NatDestinationIpAddressPoolRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3NatDestinationIpAddressPoolRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3NatDestinationIpAddressPoolRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3NatDestinationIpAddressPoolRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3NatDestinationIpAddressPoolEntry 5 }
+
+
+--
+-- NAT Session Table
+--
+f3NatSessionTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3NatSessionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This table has list of entries for NAT Session.
+         Must set f3NatInstanceAction as optimizeNatSessionRetrieve(1) 
+         before get data from this table."
+   ::= { f3NatConfigObjects 7 }
+
+f3NatSessionEntry OBJECT-TYPE
+    SYNTAX      F3NatSessionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The conceptual row in f3NatSessionTable."
+    INDEX { neIndex, f3VrfIndex, f3NatInstanceIndex, f3NatSessionIndex }
+   ::= { f3NatSessionTable 1 }
+
+F3NatSessionEntry ::= SEQUENCE {
+    f3NatSessionIndex                  Integer32,
+    f3NatSessionExternalIpInterface    F3DisplayString,
+    f3NatSessionType                   NatType,
+    f3NatSessionUpTime                 Unsigned32,
+    f3NatSessionProtocol               NatSessionProtocolType,
+    f3NatSessionInternalSrcAddress     F3DisplayString,
+    f3NatSessionInternalSrcPort        Unsigned32,
+    f3NatSessionInternalDstAddress     F3DisplayString,
+    f3NatSessionInternalDstPort        Unsigned32,
+    f3NatSessionExternalSrcAddress     F3DisplayString,
+    f3NatSessionExternalSrcPort        Unsigned32,
+    f3NatSessionExternalDstAddress     F3DisplayString,
+    f3NatSessionExternalDstPort        Unsigned32,
+    f3NatSessionMaxIdleTime            Unsigned32,
+    f3NatSessionCurrentIdleTime        Unsigned32
+}
+
+f3NatSessionIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The NAT Session number."
+    ::= { f3NatSessionEntry 1 }
+
+f3NatSessionExternalIpInterface OBJECT-TYPE
+    SYNTAX      F3DisplayString (SIZE (0..15))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "Specify the External Interface Name for the NAT Session."
+    ::= { f3NatSessionEntry 2 }
+
+f3NatSessionType OBJECT-TYPE
+    SYNTAX      NatType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "Specify the NAT type for this instance."
+    ::= { f3NatSessionEntry 3 }
+
+f3NatSessionUpTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The up time of this session in one-hundredths of a second."
+    ::= { f3NatSessionEntry 4 }
+
+f3NatSessionProtocol OBJECT-TYPE
+    SYNTAX      NatSessionProtocolType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "Protocol type of this session."
+    ::= { f3NatSessionEntry 5 }
+
+f3NatSessionInternalSrcAddress OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The source IP address of the session endpoint that lies 
+            in the private network.  The value of this object must 
+            be zero only when Private Src EP Bind Id is zero.  When
+            the value is zero, the NAT session lookup will match 
+            any IP address to this field."
+    ::= { f3NatSessionEntry 6 }
+
+f3NatSessionInternalSrcPort OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "When the value of protocol is TCP or UDP, this object 
+            represents the source port in the first packet of session 
+            while in private-realm.  On the other hand, when the protocol 
+            is ICMP, a NAT session is created only for query/response 
+            type ICMP messages such as ICMP echo, timestamp and information 
+            request messages, and this object represents the private-realm 
+            specific identifier in the ICMP message."
+    ::= { f3NatSessionEntry 7 }
+
+f3NatSessionInternalDstAddress OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The destination IP address of the session endpoint 
+            that lies in the private network."
+    ::= { f3NatSessionEntry 8 }
+
+f3NatSessionInternalDstPort OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "When the value of protocol is TCP or UDP, this object 
+            represents the source port in the first packet of 
+            session while in private-realm.  On the other hand, 
+            when the protocol is ICMP, a NAT session is created 
+            only for query/response type ICMP messages such as ICMP echo, 
+					  timestamp and information request messages, and this object 
+					  represents the private-realm specific identifier 
+					  in the ICMP message."
+    ::= { f3NatSessionEntry 9 }
+
+f3NatSessionExternalSrcAddress OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The source IP address of the session endpoint 
+            that lies in the public network."
+    ::= { f3NatSessionEntry 10 }
+
+f3NatSessionExternalSrcPort OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "When the value of protocol is TCP or UDP, this object 
+            represents the source port in the first packet of 
+            session while in public-realm.  On the other hand, 
+            when the protocol is ICMP, a NAT session is created 
+            only for query/response type ICMP messages such 
+            as ICMP echo, timestamp and information request messages, 
+            and this object represents the public-realm specific 
+            identifier in the ICMP message."
+    ::= { f3NatSessionEntry 11 }
+
+f3NatSessionExternalDstAddress OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The destination IP address of the session endpoint 
+            that lies in the public network."
+    ::= { f3NatSessionEntry 12 }
+
+f3NatSessionExternalDstPort OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "When the value of protocol is TCP or UDP, this object 
+            represents the source port in the first packet of session 
+            while in public-realm.  On the other hand, when the 
+            protocol is ICMP, a NAT session is created only for 
+            query/response type ICMP messages such as ICMP echo, 
+						timestamp and information request messages, and this object 
+						represents the public-realm specific identifier 
+						in the ICMP message."
+    ::= { f3NatSessionEntry 13 }
+
+f3NatSessionMaxIdleTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The max time for which this session can be idle 
+            without detecting a packet."
+    ::= { f3NatSessionEntry 14 }
+
+f3NatSessionCurrentIdleTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The time since a packet belonging to this
+            session was last detected."
+    ::= { f3NatSessionEntry 15 }
+
+
+--
+-- Conformance
+--
+f3NatCompliances OBJECT IDENTIFIER ::= {f3NatConformance 1}
+f3NatGroups      OBJECT IDENTIFIER ::= {f3NatConformance 2}
+
+f3NatCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the F3-NAT-MIB compilance."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              natConfigGroup
+        }
+    ::= { f3NatCompliances 1 }
+
+natConfigGroup OBJECT-GROUP
+   OBJECTS {
+      f3NatSystemUdpTimeout,
+      f3NatSystemIcmpTimeout,
+      f3NatSystemTcpIdleTimeout,
+      
+      f3NatInstanceIndex,
+      f3NatInstanceName,
+      f3NatInstanceEnabled,
+      f3NatInstanceType,
+      f3NatInstanceAction,
+      f3NatInstanceStorageType,
+      f3NatInstanceRowStatus,
+      
+      f3NatMappingEntryIndex,
+      f3NatMappingEntryType,
+      f3NatMappingEntryProtocol,
+      f3NatMappingEntryInternalSrcAddress,
+      f3NatMappingEntryInternalSrcPortFrom,
+      f3NatMappingEntryInternalSrcPortTo,
+      f3NatMappingEntryExternalSrcAddress,
+      f3NatMappingEntryExternalSrcPortFrom,
+      f3NatMappingEntryExternalSrcPortTo,
+      f3NatMappingEntryStorageType,
+      f3NatMappingEntryRowStatus,
+      
+      f3NatPolicyIndex,
+      f3NatPolicyExternalIpInterface,
+      f3NatPolicyStorageType,
+      f3NatPolicyRowStatus,
+      
+      f3NatExternalIpAddressPoolIndex,
+      f3NatExternalIpAddressPool,
+      f3NatExternalIpAddressPoolStorageType,
+      f3NatExternalIpAddressPoolRowStatus,
+      
+      f3NatDestinationIpAddressPoolIndex,
+      f3NatDestinationInIpAddressPool,
+      f3NatDestinationOutIpAddressPool,
+      f3NatDestinationIpAddressPoolStorageType,
+      f3NatDestinationIpAddressPoolRowStatus,
+      
+      f3NatSessionIndex,
+      f3NatSessionExternalIpInterface,
+      f3NatSessionType,
+      f3NatSessionUpTime,
+      f3NatSessionProtocol,
+      f3NatSessionInternalSrcAddress,
+      f3NatSessionInternalSrcPort,
+      f3NatSessionInternalDstAddress,
+      f3NatSessionInternalDstPort,
+      f3NatSessionExternalSrcAddress,
+      f3NatSessionExternalSrcPort,
+      f3NatSessionExternalDstAddress,
+      f3NatSessionExternalDstPort,
+      f3NatSessionMaxIdleTime,
+      f3NatSessionCurrentIdleTime
+   }
+   STATUS  current
+   DESCRIPTION
+             "A collection of objects used to manage the NAT Configuration objects."
+    ::= { f3NatGroups 1 }
+
+END

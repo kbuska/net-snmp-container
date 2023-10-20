@@ -1,0 +1,1191 @@
+F3-MIRRORPROBE-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32
+             FROM SNMPv2-SMI
+    MODULE-COMPLIANCE, OBJECT-GROUP
+             FROM SNMPv2-CONF
+    DisplayString, TruthValue, RowStatus, StorageType,
+    VariablePointer, MacAddress, DateAndTime, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    fsp150cm
+             FROM  ADVA-MIB
+    neIndex, shelfIndex, slotIndex
+             FROM CM-ENTITY-MIB
+    TrafficDirection, VlanId, VlanPriority, F3DisplayString,
+    AdminState, CmPmIntervalType, CmPmBinAction, PerfCounter64
+             FROM  CM-COMMON-MIB
+    L3AclRuleOperation
+             FROM  F3-L3-MIB;
+
+f3MirrorProbeMIB MODULE-IDENTITY
+    LAST-UPDATED    "201508030000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the Mirroring Probe MIB definitions used by 
+             the F3 (FSP150CM/CC) product lines.
+             Copyright (C) ADVA."
+    REVISION        "201508030000Z"
+    DESCRIPTION
+        "" 
+    ::= {fsp150cm 41}    
+
+-- 
+-- OID definitions
+-- 
+f3MirrorProbeObjects        OBJECT IDENTIFIER ::= {f3MirrorProbeMIB 1}
+f3MirrorProbePerformance    OBJECT IDENTIFIER ::= {f3MirrorProbeMIB 2}
+f3MirrorProbeNotifications  OBJECT IDENTIFIER ::= {f3MirrorProbeMIB 3}
+f3MirrorProbeConformance    OBJECT IDENTIFIER ::= {f3MirrorProbeMIB 4}
+
+--
+--  Mirroring Probe Table
+--
+f3MirroringProbeTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF  F3MirroringProbeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the Mirroring Probe."
+    ::= { f3MirrorProbeObjects 1 }
+
+f3MirroringProbeEntry  OBJECT-TYPE
+    SYNTAX      F3MirroringProbeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirroringProbeTable."
+    INDEX { neIndex, shelfIndex, slotIndex, f3MirroringProbePortIndex, f3MirroringProbeIndex }
+    ::= { f3MirroringProbeTable 1 }
+
+F3MirroringProbeEntry ::= SEQUENCE { 
+    f3MirroringProbePortIndex                     Integer32,
+    f3MirroringProbeIndex                         Integer32,
+    f3MirroringProbeMonitorPort                   VariablePointer,
+    f3MirroringProbeAlias                         DisplayString,
+    f3MirroringProbeCOS                           Integer32,
+    f3MirroringProbeCIRLo                         Unsigned32,
+    f3MirroringProbeCIRHi                         Unsigned32,
+    f3MirroringProbeEIRLo                         Unsigned32,
+    f3MirroringProbeEIRHi                         Unsigned32,
+    f3MirroringProbeBufferSize                    Unsigned32,
+    f3MirroringProbeCTagControl                   TruthValue,
+    f3MirroringProbeCTagVlanId                    VlanId,
+    f3MirroringProbeCTagVlanPriority              VlanPriority,
+    f3MirroringProbeSTagControl                   TruthValue,
+    f3MirroringProbeSTagVlanId                    VlanId,
+    f3MirroringProbeSTagVlanPriority              VlanPriority,
+    f3MirroringProbeTruncationControl             TruthValue,
+    f3MirroringProbeTruncationLength              Unsigned32,
+    f3MirroringProbeTimestampControl              TruthValue,
+    f3MirroringProbeSourcePortDirection           TrafficDirection,
+    f3MirroringProbeStorageType                   StorageType,
+    f3MirroringProbeRowStatus                     RowStatus
+}
+
+f3MirroringProbePortIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The port number value."
+    ::= { f3MirroringProbeEntry 1 }
+       
+f3MirroringProbeIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The index of the Mirroring Probe entry."
+    ::= { f3MirroringProbeEntry 2 }
+
+f3MirroringProbeMonitorPort OBJECT-TYPE
+    SYNTAX      VariablePointer 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "specify the associated physical port on the device,
+             to which the Mirroring Probe is attached."
+    ::= { f3MirroringProbeEntry 3 }
+
+f3MirroringProbeAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The Mirroring Probe alias."
+    ::= { f3MirroringProbeEntry 4 }
+
+f3MirroringProbeCOS OBJECT-TYPE
+    SYNTAX     Integer32(0..7)
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Class of Service associated with the
+          Mirroring Probe."
+     ::= { f3MirroringProbeEntry 5 }
+
+f3MirroringProbeCIRLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Commited Information
+          Rate(CIR) for the Mirroring Probe. This represents the lower 32 bits of the
+          CIR."
+     ::= { f3MirroringProbeEntry 6 }
+
+f3MirroringProbeCIRHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Commited Information
+          Rate(CIR) for the Mirroring Probe. This represents the upper 32 bits of the
+          CIR."
+     ::= { f3MirroringProbeEntry 7 }
+ 
+f3MirroringProbeEIRLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Excess Information
+          Rate(EIR) for the Mirroring Probe. This represents the lower 32 bits
+          of the EIR."
+
+     ::= { f3MirroringProbeEntry 8 }
+     
+f3MirroringProbeEIRHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Excess Information
+          Rate(EIR) for the Mirroring Probe. This represents the upper 32 bits
+          of the EIR."
+     ::= { f3MirroringProbeEntry 9 }
+
+f3MirroringProbeBufferSize OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Mirroring Probe Buffer Size."
+     ::= { f3MirroringProbeEntry 10 }
+
+f3MirroringProbeCTagControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the tag management 
+          operation on the C-TAG on the Mirroring Probe.  
+          Supported types are 'push', 'pushvid',
+          'swapvid' and 'none'. If the type is 'push', 
+          the VLAN Id (f3MirroringProbeCTagVlanId) and priority
+          (f3MirroringProbeCTagVlanPriority) are pushed onto the frame;
+          if the type is 'pushvid', only the VLAN Id (12 bits) is pushed,
+          the Priority is copied from incoming tag's priority;
+          if the type is 'swapvid', only the VLAN Id (12 bits) are 
+          swapped with the specified f3MirroringProbeCTagVlanId; 
+          if the type is 'none', no C-TAG management is performed.
+
+          This object is not applicable for Tranparent Flow; the value should be 'none'."
+     ::= { f3MirroringProbeEntry 11 }
+
+f3MirroringProbeCTagVlanId  OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the VLAN Id to
+          be pushed or swapped, based on the value of f3MirroringProbeCTagControl.
+          It is applicable for 'push', 'swapvid' and 'pushvid'
+          control types.
+
+          This object is not applicable for Tranparent Flow; the value should be 0."
+     ::= { f3MirroringProbeEntry 12 }
+
+f3MirroringProbeCTagVlanPriority  OBJECT-TYPE
+    SYNTAX     VlanPriority
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the VLAN Priority to
+          be pushed or swapped, based on the value of f3MirroringProbeCTagControl.
+          It is applicable for 'push' control type.
+
+          This object is not applicable for Tranparent Flow; the value should be 0."
+     ::= { f3MirroringProbeEntry 13 }
+
+f3MirroringProbeSTagControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the tag management 
+          operation on the S-TAG on the Mirroring Probe. Supported types are 'push', 
+          'swapvid', and 'none'. If the type is 'push', 
+          the VLAN Id (f3MirroringProbeSTagVlanId) and priority
+          (f3MirroringProbeSTagVlanPriority) are pushed onto the frame; if the type is
+          'swapvid', the VLAN Id(12 bits) is swapped with the specified
+          f3MirroringProbeSTagVlanId; type is 'none', no S-TAG manament is performed.
+
+          This object is not applicable for Tranparent Flow; the value should be 'none'."
+     ::= { f3MirroringProbeEntry 14 }
+
+f3MirroringProbeSTagVlanId  OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the VLAN Id to
+          be pushed, based on the value of f3MirroringProbeSTagControl.
+          It is applicable for 'push' control type.
+
+          This object is not applicable for Tranparent Flow; the value should be 0."
+     ::= { f3MirroringProbeEntry 15 }
+
+f3MirroringProbeSTagVlanPriority  OBJECT-TYPE
+    SYNTAX     VlanPriority
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the VLAN Priority to
+          be pushed, based on the value of f3MirroringProbeSTagControl.
+          It is applicable for 'push' control type.
+
+          This object is not applicable for Tranparent Flow; the value should be 0."
+     ::= { f3MirroringProbeEntry 16 }
+
+f3MirroringProbeTruncationControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of whether or not the Truncation is enabled
+          on the Mirroring Probe."
+     ::= { f3MirroringProbeEntry 17 }
+
+f3MirroringProbeTruncationLength OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Mirroring Probe Truncation Length."
+     ::= { f3MirroringProbeEntry 18 }
+
+f3MirroringProbeTimestampControl OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of whether or not the Time stamp is enabled
+          on the Mirroring Probe."
+     ::= { f3MirroringProbeEntry 19 }
+
+f3MirroringProbeSourcePortDirection OBJECT-TYPE
+    SYNTAX      TrafficDirection 
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The direction of the Mirroring Probe Source Port.
+             Enumerations for direction of traffic.  
+             a2n     - Access to Network direction, 
+             n2a     - Network to Access direction,
+             ingress - Entering system direction,
+             egress  - Away from system direction,
+             n2n     - Network to Network direction."
+     ::= { f3MirroringProbeEntry 20 }
+ 
+f3MirroringProbeStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3MirroringProbeEntry 21 }
+
+f3MirroringProbeRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3MirroringProbeRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3MirroringProbeRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3MirroringProbeRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3MirroringProbeEntry 22 }
+
+
+--
+--  ACL Rule Table
+--
+f3MirroringProbeAclRuleTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirroringProbeAclRuleEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the MirroringProbe ACL rule."
+    ::= { f3MirrorProbeObjects 2 }
+
+f3MirroringProbeAclRuleEntry  OBJECT-TYPE
+    SYNTAX      F3MirroringProbeAclRuleEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirroringProbeAclRuleTable."
+    INDEX { neIndex, shelfIndex, slotIndex,
+            f3MirroringProbePortIndex, f3MirroringProbeAclRuleParentIndex, f3MirroringProbeAclRuleIndex }
+    ::= { f3MirroringProbeAclRuleTable 1 }
+
+F3MirroringProbeAclRuleEntry ::= SEQUENCE {
+    f3MirroringProbeAclRuleParentIndex                               Integer32,
+    f3MirroringProbeAclRuleIndex                                     Integer32,
+    f3MirroringProbeAclRuleAlias                                     F3DisplayString,
+    f3MirroringProbeAclRuleSrcIpv4AddressControl                     TruthValue,
+    f3MirroringProbeAclRuleDynamicSrcIpControl                       TruthValue,
+    f3MirroringProbeAclRuleSrcIpv4AddressLowLimit                    IpAddress,
+    f3MirroringProbeAclRuleDstIpv4AddressControl                     TruthValue,
+    f3MirroringProbeAclRuleDstIpv4AddressLowLimit                    IpAddress,
+    f3MirroringProbeAclRuleIpv4PriorityControl                       TruthValue,
+    f3MirroringProbeAclRuleIpv4PriorityLowLimit                      Integer32,
+    f3MirroringProbeAclRuleProtocolControl                           TruthValue,
+    f3MirroringProbeAclRuleProtocolNumber                            Integer32,
+    f3MirroringProbeAclRuleSrcPortControl                            TruthValue,
+    f3MirroringProbeAclRuleSrcPortLowLimit                           Integer32,
+    f3MirroringProbeAclRuleSrcPortHighLimit                          Integer32,
+    f3MirroringProbeAclRuleDstPortControl                            TruthValue,
+    f3MirroringProbeAclRuleDstPortLowLimit                           Integer32,
+    f3MirroringProbeAclRuleDstPortHighLimit                          Integer32,
+    f3MirroringProbeAclRulePriority                                  Integer32,
+    f3MirroringProbeAclRuleCOS                                       Integer32,
+    f3MirroringProbeAclRuleOperation                                 L3AclRuleOperation,
+    f3MirroringProbeAclRuleSummary                                   F3DisplayString,
+    f3MirroringProbeAclRuleCosOverrideControl                        TruthValue,
+    f3MirroringProbeAclRuleSrcMacAddressControl                      TruthValue,
+    f3MirroringProbeAclRuleDynamicSrcMacAddressControl               TruthValue,
+    f3MirroringProbeAclRuleSrcMacAddress                             MacAddress,
+    f3MirroringProbeAclRuleSrcMacAddressMask                         MacAddress,
+    f3MirroringProbeAclRuleDstMacAddressControl                      TruthValue,
+    f3MirroringProbeAclRuleDstMacAddress                             MacAddress,
+    f3MirroringProbeAclRuleDstMacAddressMask                         MacAddress,
+    f3MirroringProbeAclRuleOuterVlanVIDControl                       TruthValue,
+    f3MirroringProbeAclRuleOuterVlanVIDLowLimit                      VlanId,
+    f3MirroringProbeAclRuleOuterVlanVIDHighLimit                     VlanId,
+    f3MirroringProbeAclRuleInnerVlanVIDControl                       TruthValue,
+    f3MirroringProbeAclRuleInnerVlanVIDLowLimit                      VlanId,
+    f3MirroringProbeAclRuleInnerVlanVIDHighLimit                     VlanId,
+    f3MirroringProbeAclRuleOuterVlanPcpControl                       TruthValue,
+    f3MirroringProbeAclRuleOuterVlanPcpLowLimit                      VlanPriority,
+    f3MirroringProbeAclRuleOuterVlanPcpHighLimit                     VlanPriority,
+    f3MirroringProbeAclRuleInnerVlanPcpControl                       TruthValue,
+    f3MirroringProbeAclRuleInnerVlanPcpLowLimit                      VlanPriority,
+    f3MirroringProbeAclRuleInnerVlanPcpHighLimit                     VlanPriority,
+    f3MirroringProbeAclRuleOuterVlanDeiControl                       TruthValue,
+    f3MirroringProbeAclRuleOuterVlanDei                              Unsigned32,
+    f3MirroringProbeAclRuleEtherTypeControl                          TruthValue,
+    f3MirroringProbeAclRuleEtherType                                 Integer32,
+    f3MirroringProbeAclRuleTcpFlagsControl                           TruthValue,
+    f3MirroringProbeAclRuleTcpFlags                                  Integer32,
+    f3MirroringProbeAclRuleSrcIpv4AddressHighLimit                   IpAddress,
+    f3MirroringProbeAclRuleDstIpv4AddressHighLimit                   IpAddress,
+    f3MirroringProbeAclRuleIpv4PriorityHighLimit                     Integer32,
+    f3MirroringProbeAclRuleStorageType                               StorageType,
+    f3MirroringProbeAclRuleRowStatus                                 RowStatus,
+    f3MirroringProbeAclRuleAdminState                                AdminState
+}
+
+f3MirroringProbeAclRuleParentIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule parent number, it could be flow index"
+    ::= { f3MirroringProbeAclRuleEntry 1 }
+
+f3MirroringProbeAclRuleIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule number."
+    ::= { f3MirroringProbeAclRuleEntry 2 }
+
+f3MirroringProbeAclRuleAlias OBJECT-TYPE
+    SYNTAX      F3DisplayString (SIZE (0..256))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule alias."
+    ::= { f3MirroringProbeAclRuleEntry 3 }
+
+f3MirroringProbeAclRuleSrcIpv4AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source IPv4 Adress control whether enabled."
+    ::= { f3MirroringProbeAclRuleEntry 4 }
+
+f3MirroringProbeAclRuleDynamicSrcIpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic source IPv4 Adress control whether enabled."
+    ::= { f3MirroringProbeAclRuleEntry 5 }
+
+f3MirroringProbeAclRuleSrcIpv4AddressLowLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source IPv4 Adress low limit."
+    ::= { f3MirroringProbeAclRuleEntry 6 }
+
+f3MirroringProbeAclRuleDstIpv4AddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Destination IPv4 Adress control whether enabled."
+    ::= { f3MirroringProbeAclRuleEntry 7 }
+
+f3MirroringProbeAclRuleDstIpv4AddressLowLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Destination IPv4 Adress low limit."
+    ::= { f3MirroringProbeAclRuleEntry 8 }
+
+f3MirroringProbeAclRuleIpv4PriorityControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule IPv4 Priority control whether enabled."
+    ::= { f3MirroringProbeAclRuleEntry 9 }
+
+f3MirroringProbeAclRuleIpv4PriorityLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule IPv4 priority low limit."
+    ::= { f3MirroringProbeAclRuleEntry 10 }
+
+f3MirroringProbeAclRuleProtocolControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule protocol control whether enabled."
+    ::= { f3MirroringProbeAclRuleEntry 11 }
+
+f3MirroringProbeAclRuleProtocolNumber OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule protocol number."
+    ::= { f3MirroringProbeAclRuleEntry 12 }
+
+f3MirroringProbeAclRuleSrcPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source port whether enabled."
+    ::= { f3MirroringProbeAclRuleEntry 13 }
+
+f3MirroringProbeAclRuleSrcPortLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source port low limit."
+    ::= { f3MirroringProbeAclRuleEntry 14 }
+
+f3MirroringProbeAclRuleSrcPortHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source port low limit."
+    ::= { f3MirroringProbeAclRuleEntry 15 }
+
+f3MirroringProbeAclRuleDstPortControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination port whether enabled."
+    ::= { f3MirroringProbeAclRuleEntry 16 }
+
+f3MirroringProbeAclRuleDstPortLowLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination port low limit."
+    ::= { f3MirroringProbeAclRuleEntry 17 }
+
+f3MirroringProbeAclRuleDstPortHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination port low limit."
+    ::= { f3MirroringProbeAclRuleEntry 18 }
+
+f3MirroringProbeAclRulePriority OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule priority."
+    ::= { f3MirroringProbeAclRuleEntry 19 }
+
+f3MirroringProbeAclRuleCOS OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule class of service."
+    ::= { f3MirroringProbeAclRuleEntry 20 }
+
+f3MirroringProbeAclRuleOperation OBJECT-TYPE
+    SYNTAX      L3AclRuleOperation
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule action."
+    ::= { f3MirroringProbeAclRuleEntry 21 }
+
+f3MirroringProbeAclRuleSummary OBJECT-TYPE
+    SYNTAX      F3DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule summary."
+    ::= { f3MirroringProbeAclRuleEntry 22 }
+
+f3MirroringProbeAclRuleCosOverrideControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule COS Override control."
+    ::= { f3MirroringProbeAclRuleEntry 23 }
+
+f3MirroringProbeAclRuleSrcMacAddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Source MAC address control."
+    ::= { f3MirroringProbeAclRuleEntry 24 }
+
+f3MirroringProbeAclRuleDynamicSrcMacAddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Source MAC address control."
+    ::= { f3MirroringProbeAclRuleEntry 25 }
+
+f3MirroringProbeAclRuleSrcMacAddress OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Source MAC address."
+    ::= { f3MirroringProbeAclRuleEntry 26 }
+
+f3MirroringProbeAclRuleSrcMacAddressMask OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Source MAC address mask."
+    ::= { f3MirroringProbeAclRuleEntry 27 }
+
+f3MirroringProbeAclRuleDstMacAddressControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Destination MAC address control."
+    ::= { f3MirroringProbeAclRuleEntry 28 }
+
+f3MirroringProbeAclRuleDstMacAddress OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Destination MAC address."
+    ::= { f3MirroringProbeAclRuleEntry 29 }
+
+f3MirroringProbeAclRuleDstMacAddressMask OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule dynamic Destination MAC address mask."
+    ::= { f3MirroringProbeAclRuleEntry 30 }
+
+f3MirroringProbeAclRuleOuterVlanVIDControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer VID control."
+    ::= { f3MirroringProbeAclRuleEntry 31 }
+
+f3MirroringProbeAclRuleOuterVlanVIDLowLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer Vlan ID low limit."
+    ::= { f3MirroringProbeAclRuleEntry 32 }
+
+f3MirroringProbeAclRuleOuterVlanVIDHighLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer Vlan ID high limit."
+    ::= { f3MirroringProbeAclRuleEntry 33 }
+
+f3MirroringProbeAclRuleInnerVlanVIDControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner VID control."
+    ::= { f3MirroringProbeAclRuleEntry 34 }
+
+f3MirroringProbeAclRuleInnerVlanVIDLowLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner Vlan ID low limit."
+    ::= { f3MirroringProbeAclRuleEntry 35 }
+
+f3MirroringProbeAclRuleInnerVlanVIDHighLimit OBJECT-TYPE
+    SYNTAX      VlanId
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule Inner Vlan ID high limit."
+    ::= { f3MirroringProbeAclRuleEntry 36 }
+
+f3MirroringProbeAclRuleOuterVlanPcpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan PCP control."
+    ::= { f3MirroringProbeAclRuleEntry 37 }
+
+f3MirroringProbeAclRuleOuterVlanPcpLowLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan PCP priority low limit."
+    ::= { f3MirroringProbeAclRuleEntry 38 }
+
+f3MirroringProbeAclRuleOuterVlanPcpHighLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan PCP priority high limit."
+    ::= { f3MirroringProbeAclRuleEntry 39 }
+
+f3MirroringProbeAclRuleInnerVlanPcpControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner vlan PCP control."
+    ::= { f3MirroringProbeAclRuleEntry 40 }
+
+f3MirroringProbeAclRuleInnerVlanPcpLowLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner vlan PCP priority low limit."
+    ::= { f3MirroringProbeAclRuleEntry 41 }
+
+f3MirroringProbeAclRuleInnerVlanPcpHighLimit OBJECT-TYPE
+    SYNTAX      VlanPriority
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule inner vlan PCP priority high limit."
+    ::= { f3MirroringProbeAclRuleEntry 42 }
+
+f3MirroringProbeAclRuleOuterVlanDeiControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan DEI control."
+    ::= { f3MirroringProbeAclRuleEntry 43 }
+
+f3MirroringProbeAclRuleOuterVlanDei OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..1)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan DEI."
+    ::= { f3MirroringProbeAclRuleEntry 44 }
+
+f3MirroringProbeAclRuleEtherTypeControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan ether type control."
+    ::= { f3MirroringProbeAclRuleEntry 45 }
+
+f3MirroringProbeAclRuleEtherType OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan ether type."
+    ::= { f3MirroringProbeAclRuleEntry 46 }
+
+f3MirroringProbeAclRuleTcpFlagsControl OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan TCP flags control."
+    ::= { f3MirroringProbeAclRuleEntry 47 }
+
+f3MirroringProbeAclRuleTcpFlags OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule outer vlan TCP flags."
+    ::= { f3MirroringProbeAclRuleEntry 48 }
+
+f3MirroringProbeAclRuleSrcIpv4AddressHighLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule source ipv4 adress high limit."
+    ::= { f3MirroringProbeAclRuleEntry 49 }
+
+f3MirroringProbeAclRuleDstIpv4AddressHighLimit OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule destination ipv4 adress high limit."
+    ::= { f3MirroringProbeAclRuleEntry 50 }
+
+f3MirroringProbeAclRuleIpv4PriorityHighLimit OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The ACL rule ipv4 priority high limit."
+    ::= { f3MirroringProbeAclRuleEntry 51 }
+
+f3MirroringProbeAclRuleStorageType OBJECT-TYPE
+    SYNTAX      StorageType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The type of storage configured for this entry."
+    ::= { f3MirroringProbeAclRuleEntry 52 }
+
+f3MirroringProbeAclRuleRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+           "The status of this row.
+                An entry MUST NOT exist in the active state unless all
+                objects in the entry have an appropriate value, as described
+                in the description clause for each writable object.
+        
+                The values of f3MirroringProbeAclRuleRowStatus supported are
+                createAndGo(4) and destroy(6).  All mandatory attributes
+                must be specified in a single SNMP SET request with
+                f3MirroringProbeAclRuleRowStatus value as createAndGo(4).
+                Upon successful row creation, this object has a
+                value of active(1).
+        
+                The f3MirroringProbeAclRuleRowStatus object may be modified if
+                the associated instance of this object is equal to active(1)."
+    ::= { f3MirroringProbeAclRuleEntry 53 }
+
+f3MirroringProbeAclRuleAdminState OBJECT-TYPE
+    SYNTAX      AdminState
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "This object allows user configure the Acl Rule in-service or management state."
+    ::= { f3MirroringProbeAclRuleEntry 54 }
+
+
+--
+-- acl rule Current Statistics Table
+--
+f3MirroringProbeAclRuleStatsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirroringProbeAclRuleStatsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of acl rule related statistics.  
+             These reflect the current data."
+    ::= { f3MirrorProbePerformance 1 }
+
+f3MirroringProbeAclRuleStatsEntry OBJECT-TYPE
+    SYNTAX      F3MirroringProbeAclRuleStatsEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirroringProbeAclRuleStatsTable.
+             Entries exist in this table for each Acl rule."
+    INDEX { neIndex, shelfIndex, slotIndex,
+            f3MirroringProbePortIndex, f3MirroringProbeAclRuleParentIndex, f3MirroringProbeAclRuleIndex, f3MirroringProbeAclRuleStatsIndex }
+    ::= { f3MirroringProbeAclRuleStatsTable 1 }
+
+F3MirroringProbeAclRuleStatsEntry ::= SEQUENCE {
+    f3MirroringProbeAclRuleStatsIndex               Integer32,
+    f3MirroringProbeAclRuleStatsIntervalType        CmPmIntervalType,
+    f3MirroringProbeAclRuleStatsValid               TruthValue,
+    f3MirroringProbeAclRuleStatsAction              CmPmBinAction,
+    f3MirroringProbeAclRuleStatsRuleMatch           PerfCounter64
+}
+
+f3MirroringProbeAclRuleStatsIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this acl statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3MirroringProbeAclRuleStatsEntry 1 }
+
+f3MirroringProbeAclRuleStatsIntervalType OBJECT-TYPE
+    SYNTAX      CmPmIntervalType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Interval over which Performance Monitoring data is collected."
+    ::= { f3MirroringProbeAclRuleStatsEntry 2 }
+
+f3MirroringProbeAclRuleStatsValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3MirroringProbeAclRuleStatsEntry 3 }
+
+f3MirroringProbeAclRuleStatsAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3MirroringProbeAclRuleStatsEntry 4 }
+
+f3MirroringProbeAclRuleStatsRuleMatch OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets matching the ACL rule."
+     ::= { f3MirroringProbeAclRuleStatsEntry 5 }
+
+--
+-- acl rule history Statistics Table
+--
+f3MirroringProbeAclRuleHistoryTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirroringProbeAclRuleHistoryEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A collection of acl rule related history statistics.  
+             These reflect the history data."
+    ::= { f3MirrorProbePerformance 2 }
+
+f3MirroringProbeAclRuleHistoryEntry OBJECT-TYPE
+    SYNTAX      F3MirroringProbeAclRuleHistoryEntry 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirroringProbeAclRuleHistoryTable.
+             Entries exist in this table for each acl rule."
+    INDEX { neIndex, shelfIndex, slotIndex,
+            f3MirroringProbePortIndex, f3MirroringProbeAclRuleParentIndex, f3MirroringProbeAclRuleIndex,
+            f3MirroringProbeAclRuleStatsIndex, f3MirroringProbeAclRuleHistoryIndex }
+    ::= { f3MirroringProbeAclRuleHistoryTable 1 }
+
+F3MirroringProbeAclRuleHistoryEntry ::= SEQUENCE {
+    f3MirroringProbeAclRuleHistoryIndex               Integer32,
+    f3MirroringProbeAclRuleHistoryTime                DateAndTime,
+    f3MirroringProbeAclRuleHistoryValid               TruthValue,
+    f3MirroringProbeAclRuleHistoryAction              CmPmBinAction,
+    f3MirroringProbeAclRuleHistoryRuleMatch           PerfCounter64
+}
+
+f3MirroringProbeAclRuleHistoryIndex OBJECT-TYPE
+    SYNTAX      Integer32 (1..4)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "An arbitrary integer index value used to uniquely identify
+            this flow point statistics entry. 
+            1 - 15min
+            2 - 1day
+            3 - rollover
+            4 - 5min"
+    ::= { f3MirroringProbeAclRuleHistoryEntry 1 }
+
+f3MirroringProbeAclRuleHistoryTime OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the time of history bin creation." 
+    ::= { f3MirroringProbeAclRuleHistoryEntry 2 }
+
+f3MirroringProbeAclRuleHistoryValid OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "Indicates the validity of the bin."
+    ::= { f3MirroringProbeAclRuleHistoryEntry 3 }
+
+f3MirroringProbeAclRuleHistoryAction OBJECT-TYPE
+    SYNTAX      CmPmBinAction
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+            "Allows the Manager to clear the bin."
+    ::= { f3MirroringProbeAclRuleHistoryEntry 4 }
+
+f3MirroringProbeAclRuleHistoryRuleMatch OBJECT-TYPE
+     SYNTAX     PerfCounter64
+     MAX-ACCESS read-only
+     STATUS     current
+     DESCRIPTION
+         "The number of packets matching acl rule."
+     ::= { f3MirroringProbeAclRuleHistoryEntry 5 }
+
+--
+-- acl rule Threshold Table
+--
+f3MirroringProbeAclRuleThresholdTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3MirroringProbeAclRuleThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A table of entries that allow manageability of acl rule Thresholds."
+    ::= { f3MirrorProbePerformance 3 }
+
+f3MirroringProbeAclRuleThresholdEntry OBJECT-TYPE
+    SYNTAX      F3MirroringProbeAclRuleThresholdEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3MirroringProbeAclRuleThresholdTable."
+    INDEX { neIndex, shelfIndex, slotIndex,
+            f3MirroringProbePortIndex, f3MirroringProbeAclRuleParentIndex, f3MirroringProbeAclRuleIndex,
+            f3MirroringProbeAclRuleStatsIndex, f3MirroringProbeAclRuleThresholdIndex }
+    ::= { f3MirroringProbeAclRuleThresholdTable 1 }
+
+F3MirroringProbeAclRuleThresholdEntry ::= SEQUENCE {
+    f3MirroringProbeAclRuleThresholdIndex       Integer32,
+    f3MirroringProbeAclRuleThresholdInterval    CmPmIntervalType,
+    f3MirroringProbeAclRuleThresholdVariable    VariablePointer,
+    f3MirroringProbeAclRuleThresholdValueLo     Unsigned32,
+    f3MirroringProbeAclRuleThresholdValueHi     Unsigned32,
+    f3MirroringProbeAclRuleThresholdMonValue    Counter64
+}
+
+f3MirroringProbeAclRuleThresholdIndex OBJECT-TYPE
+    SYNTAX     Integer32 (1..65535)
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "An index that uniquely identifies an entry in the
+        f3MirroringProbeAclRuleThresholdTable."
+    ::= { f3MirroringProbeAclRuleThresholdEntry 1 }
+
+f3MirroringProbeAclRuleThresholdInterval OBJECT-TYPE
+    SYNTAX     CmPmIntervalType
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The interval over which monitored value is
+        sampled and compared with the specified threshold."
+    ::= { f3MirroringProbeAclRuleThresholdEntry 2 }
+
+f3MirroringProbeAclRuleThresholdVariable OBJECT-TYPE
+    SYNTAX     VariablePointer
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "The object identifier of the particular variable to be
+        sampled."
+    ::= { f3MirroringProbeAclRuleThresholdEntry 3 }
+
+f3MirroringProbeAclRuleThresholdValueLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Lower 32 bits of the threshold value."
+    ::= { f3MirroringProbeAclRuleThresholdEntry 4 }
+
+f3MirroringProbeAclRuleThresholdValueHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+        "Higher 32 bits of the threshold value."
+    ::= { f3MirroringProbeAclRuleThresholdEntry 5 }
+
+f3MirroringProbeAclRuleThresholdMonValue OBJECT-TYPE
+    SYNTAX     Counter64
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+        "Monitored value corresponding to f3MirroringProbeAclRuleThresholdVariable."
+    ::= { f3MirroringProbeAclRuleThresholdEntry 6 }
+
+---
+---Notifications
+---
+
+f3MirroringProbeAclRuleThresholdCrossingAlert NOTIFICATION-TYPE
+    OBJECTS {
+                f3MirroringProbeAclRuleThresholdIndex,
+                f3MirroringProbeAclRuleThresholdInterval,
+                f3MirroringProbeAclRuleThresholdVariable,
+                f3MirroringProbeAclRuleThresholdValueLo,
+                f3MirroringProbeAclRuleThresholdValueHi,
+                f3MirroringProbeAclRuleThresholdMonValue
+            }
+    STATUS  current
+    DESCRIPTION
+            "This trap is sent each time a threshold on a PM condition
+             on a Mirroring Probe acl rule is crossed."
+  ::= { f3MirrorProbeNotifications 1 }
+
+--
+-- Conformance
+--
+f3MirrorProbeCompliances OBJECT IDENTIFIER ::= {f3MirrorProbeConformance 1}
+f3MirrorProbeGroups      OBJECT IDENTIFIER ::= {f3MirrorProbeConformance 2}
+
+f3MirrorProbeCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the Mirroring Probe."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3MirrorProbeObjectsGroup, f3MirrorProbePerfGroup
+        }
+    ::= { f3MirrorProbeCompliances 1 }
+
+f3MirrorProbeObjectsGroup OBJECT-GROUP
+    OBJECTS {
+        f3MirroringProbePortIndex, f3MirroringProbeIndex,
+        f3MirroringProbeMonitorPort, f3MirroringProbeAlias,
+        f3MirroringProbeCOS, f3MirroringProbeCIRLo, f3MirroringProbeCIRHi,
+        f3MirroringProbeEIRLo, f3MirroringProbeEIRHi, 
+        f3MirroringProbeBufferSize, f3MirroringProbeCTagControl,
+        f3MirroringProbeCTagVlanId, f3MirroringProbeCTagVlanPriority,
+        f3MirroringProbeSTagControl, f3MirroringProbeSTagVlanId,
+        f3MirroringProbeSTagVlanPriority, f3MirroringProbeTruncationControl,
+        f3MirroringProbeTruncationLength, f3MirroringProbeTimestampControl,
+        f3MirroringProbeSourcePortDirection,
+        f3MirroringProbeStorageType,
+        f3MirroringProbeRowStatus,
+        
+        f3MirroringProbeAclRuleParentIndex,f3MirroringProbeAclRuleIndex,f3MirroringProbeAclRuleAlias,f3MirroringProbeAclRuleSrcIpv4AddressControl,
+        f3MirroringProbeAclRuleDynamicSrcIpControl,f3MirroringProbeAclRuleSrcIpv4AddressLowLimit,f3MirroringProbeAclRuleDstIpv4AddressControl,
+        f3MirroringProbeAclRuleDstIpv4AddressLowLimit,f3MirroringProbeAclRuleIpv4PriorityControl,f3MirroringProbeAclRuleIpv4PriorityLowLimit,
+        f3MirroringProbeAclRuleProtocolControl,f3MirroringProbeAclRuleProtocolNumber,f3MirroringProbeAclRuleSrcPortControl,f3MirroringProbeAclRuleSrcPortLowLimit,
+        f3MirroringProbeAclRuleSrcPortHighLimit,f3MirroringProbeAclRuleDstPortControl,f3MirroringProbeAclRuleDstPortLowLimit,f3MirroringProbeAclRuleDstPortHighLimit,
+        f3MirroringProbeAclRulePriority,f3MirroringProbeAclRuleCOS,f3MirroringProbeAclRuleOperation,f3MirroringProbeAclRuleSummary,f3MirroringProbeAclRuleCosOverrideControl,
+        f3MirroringProbeAclRuleSrcMacAddressControl,f3MirroringProbeAclRuleDynamicSrcMacAddressControl,f3MirroringProbeAclRuleSrcMacAddress,
+        f3MirroringProbeAclRuleSrcMacAddressMask,f3MirroringProbeAclRuleDstMacAddressControl,f3MirroringProbeAclRuleDstMacAddress,f3MirroringProbeAclRuleDstMacAddressMask,
+        f3MirroringProbeAclRuleOuterVlanVIDControl,f3MirroringProbeAclRuleOuterVlanVIDLowLimit,f3MirroringProbeAclRuleOuterVlanVIDHighLimit,f3MirroringProbeAclRuleInnerVlanVIDControl,
+        f3MirroringProbeAclRuleInnerVlanVIDLowLimit,f3MirroringProbeAclRuleInnerVlanVIDHighLimit,f3MirroringProbeAclRuleOuterVlanPcpControl,f3MirroringProbeAclRuleOuterVlanPcpLowLimit,
+        f3MirroringProbeAclRuleOuterVlanPcpHighLimit,f3MirroringProbeAclRuleInnerVlanPcpControl,f3MirroringProbeAclRuleInnerVlanPcpLowLimit,f3MirroringProbeAclRuleInnerVlanPcpHighLimit,
+        f3MirroringProbeAclRuleOuterVlanDeiControl,f3MirroringProbeAclRuleOuterVlanDei,f3MirroringProbeAclRuleEtherTypeControl,f3MirroringProbeAclRuleEtherType,
+        f3MirroringProbeAclRuleTcpFlagsControl,f3MirroringProbeAclRuleTcpFlags,f3MirroringProbeAclRuleSrcIpv4AddressHighLimit,f3MirroringProbeAclRuleDstIpv4AddressHighLimit,
+        f3MirroringProbeAclRuleIpv4PriorityHighLimit,f3MirroringProbeAclRuleStorageType,f3MirroringProbeAclRuleRowStatus,f3MirroringProbeAclRuleAdminState
+
+        }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects used to manage the Mirroring Probe functionality."
+    ::= { f3MirrorProbeGroups 1 }
+    
+    
+f3MirrorProbePerfGroup OBJECT-GROUP
+    OBJECTS {
+        
+        f3MirroringProbeAclRuleStatsIndex,f3MirroringProbeAclRuleStatsIntervalType,f3MirroringProbeAclRuleStatsValid,f3MirroringProbeAclRuleStatsAction,
+        f3MirroringProbeAclRuleStatsRuleMatch,
+
+        f3MirroringProbeAclRuleHistoryIndex,f3MirroringProbeAclRuleHistoryTime,f3MirroringProbeAclRuleHistoryValid,f3MirroringProbeAclRuleHistoryAction,
+        f3MirroringProbeAclRuleHistoryRuleMatch,
+
+        f3MirroringProbeAclRuleThresholdIndex,f3MirroringProbeAclRuleThresholdInterval,f3MirroringProbeAclRuleThresholdVariable,
+        f3MirroringProbeAclRuleThresholdValueLo,f3MirroringProbeAclRuleThresholdValueHi,f3MirroringProbeAclRuleThresholdMonValue
+
+        }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects performance used to manage the Mirroring Probe functionality."
+    ::= { f3MirrorProbeGroups 2 }
+
+END

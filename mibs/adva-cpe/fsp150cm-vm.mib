@@ -1,0 +1,300 @@
+F3-VM-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32, Unsigned32
+             FROM SNMPv2-SMI
+    MODULE-COMPLIANCE, OBJECT-GROUP
+             FROM SNMPv2-CONF
+    DisplayString, TruthValue, RowStatus, StorageType,
+    VariablePointer, TEXTUAL-CONVENTION
+             FROM SNMPv2-TC
+    fsp150cm
+             FROM  ADVA-MIB
+    VlanId, F3DisplayString, F3DisplayString
+             FROM  CM-COMMON-MIB
+    neIndex, shelfIndex, slotIndex
+             FROM CM-ENTITY-MIB;
+
+f3VmMIB MODULE-IDENTITY
+    LAST-UPDATED    "201409120000Z"
+    ORGANIZATION    "ADVA Optical Networking SE"
+    CONTACT-INFO
+        "Web URL: http://adva.com/
+        E-mail:  support@adva.com
+        Postal:  ADVA Optical Networking SE
+             Campus Martinsried
+             Fraunhoferstrasse 9a
+             82152 Martinsried/Munich
+             Germany
+        Phone: +49 089 89 06 65 0
+        Fax:  +49 089 89 06 65 199 "
+    DESCRIPTION
+            "This module defines the VM MIB definitions used by 
+             the F3 (FSP150CM/CC) product lines.
+             Copyright (C) ADVA."
+    REVISION        "201409120000Z"
+    DESCRIPTION
+        "" 
+    ::= {fsp150cm 40}    
+
+-- 
+-- OID definitions
+-- 
+f3VmObjects             OBJECT IDENTIFIER ::= {f3VmMIB 1}
+f3VmPerformance         OBJECT IDENTIFIER ::= {f3VmMIB 2}
+f3VmNotifications       OBJECT IDENTIFIER ::= {f3VmMIB 3}
+f3VmConformance         OBJECT IDENTIFIER ::= {f3VmMIB 4}
+
+--
+-- Textual Conventions
+--
+
+--
+--  VM Tunnel Table
+--
+f3VmTunnelTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE OF F3VmTunnelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A list of entries for the Dhcp Relay Agent."
+    ::= { f3VmObjects 1 }
+
+f3VmTunnelEntry  OBJECT-TYPE
+    SYNTAX      F3VmTunnelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+            "A conceptual row in the f3VmTunnelTable."
+    INDEX { neIndex, shelfIndex, slotIndex, f3VmTunnelPortIndex, f3VmTunnelIndex }
+    ::= { f3VmTunnelTable 1 }
+
+F3VmTunnelEntry ::= SEQUENCE { 
+    f3VmTunnelPortIndex                           Integer32,
+    f3VmTunnelIndex                               Integer32,
+    f3VmTunnelTunnelAssociatedPort                VariablePointer,
+    f3VmTunnelAlias                               DisplayString,
+    f3VmTunnelCVlanEnabled                        TruthValue,
+    f3VmTunnelCVlanId                             VlanId,
+    f3VmTunnelSVlanEnabled                        TruthValue,
+    f3VmTunnelSVlanId                             VlanId,
+    f3VmTunnelCOS                                 Integer32,
+    f3VmTunnelCIRLo                               Unsigned32,
+    f3VmTunnelCIRHi                               Unsigned32,
+    f3VmTunnelEIRLo                               Unsigned32,
+    f3VmTunnelEIRHi                               Unsigned32,
+    f3VmTunnelBufferSize                          Unsigned32,
+    f3VmTunnelStorageType                         StorageType,
+    f3VmTunnelRowStatus                           RowStatus
+}
+
+f3VmTunnelPortIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The port number value."
+    ::= { f3VmTunnelEntry 1 }
+       
+f3VmTunnelIndex OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+           "The index of the VM Tunnel entry."
+    ::= { f3VmTunnelEntry 2 }
+
+f3VmTunnelTunnelAssociatedPort OBJECT-TYPE
+    SYNTAX      VariablePointer 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "specify the associated physical port on the device,
+             to which the VM Tunnel is attached."
+    ::= { f3VmTunnelEntry 3 }
+
+f3VmTunnelAlias OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+           "The VM Tunnel alias."
+    ::= { f3VmTunnelEntry 4 }
+
+f3VmTunnelCVlanEnabled OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of whether or not the C-TAG is enabled
+          on the VM Tunnel."
+     ::= { f3VmTunnelEntry 5 }
+
+f3VmTunnelCVlanId OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the VLAN Id in case the 
+          f3VmTunnelCVlanEnabled is set to true."
+     ::= { f3VmTunnelEntry 6 }
+
+f3VmTunnelSVlanEnabled OBJECT-TYPE
+    SYNTAX     TruthValue
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of whether or not the C-TAG is enabled
+          on the VM Tunnel."
+     ::= { f3VmTunnelEntry 7 }
+
+f3VmTunnelSVlanId OBJECT-TYPE
+    SYNTAX     VlanId
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the VLAN Id in case the 
+          f3VmTunnelSVlanEnabled is set to true."
+     ::= { f3VmTunnelEntry 8 }
+
+
+f3VmTunnelCOS OBJECT-TYPE
+    SYNTAX     Integer32(0..7)
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Class of Service associated with the
+          VM Tunnel."
+     ::= { f3VmTunnelEntry 9 }
+
+f3VmTunnelCIRLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Commited Information
+          Rate(CIR) for the CM Tunnel. This represents the lower 32 bits of the
+          CIR."
+     ::= { f3VmTunnelEntry 10 }
+
+f3VmTunnelCIRHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Commited Information
+          Rate(CIR) for the CM Tunnel. This represents the upper 32 bits of the
+          CIR."
+     ::= { f3VmTunnelEntry 11 }
+ 
+f3VmTunnelEIRLo OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Excess Information
+          Rate(EIR) for the CM Tunnel. This represents the lower 32 bits
+          of the EIR."
+
+     ::= { f3VmTunnelEntry 12 }
+     
+f3VmTunnelEIRHi OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the Excess Information
+          Rate(EIR) for the CM Tunnel. This represents the upper 32 bits
+          of the EIR."
+     ::= { f3VmTunnelEntry 13 }
+
+
+f3VmTunnelBufferSize OBJECT-TYPE
+    SYNTAX     Unsigned32
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+         "This object allows specification of the VM Tunnel Buffer Size."
+     ::= { f3VmTunnelEntry 14 }
+
+f3VmTunnelStorageType OBJECT-TYPE
+    SYNTAX     StorageType
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The type of storage configured for this entry."
+    ::= { f3VmTunnelEntry 15 }
+
+f3VmTunnelRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+            "The status of this row.
+            An entry MUST NOT exist in the active state unless all
+            objects in the entry have an appropriate value, as described
+            in the description clause for each writable object.
+
+            The values of f3VmTunnelRowStatus supported are
+            createAndGo(4) and destroy(6).  All mandatory attributes
+            must be specified in a single SNMP SET request with
+            f3VmTunnelRowStatus value as createAndGo(4).
+            Upon successful row creation, this variable has a
+            value of active(1).
+
+            The f3VmTunnelRowStatus object may be modified if
+            the associated instance of this object is equal to active(1)."
+    ::= { f3VmTunnelEntry 16 }
+
+--
+--  VM Database 
+--
+f3VmdatabaseAction OBJECT-TYPE
+    SYNTAX     INTEGER {
+                 not-applicable(0),
+                 restore-factorydefaults(1)
+               }
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "Initiates a configuration database action.
+             Supported actions are:
+             restore-factorydefaults(1) - Restart the Server system using the factory
+                                  default database."
+    ::= { f3VmObjects 2 }
+
+--
+-- Conformance
+--
+f3VmCompliances OBJECT IDENTIFIER ::= {f3VmConformance 1}
+f3VmGroups      OBJECT IDENTIFIER ::= {f3VmConformance 2}
+
+f3VmCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "Describes the requirements for conformance to the VM."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+              f3VmGroup
+        }
+    ::= { f3VmCompliances 1 }
+
+f3VmGroup OBJECT-GROUP
+    OBJECTS {
+        f3VmTunnelPortIndex,f3VmTunnelIndex,
+        f3VmTunnelTunnelAssociatedPort,f3VmTunnelAlias,
+        f3VmTunnelCVlanEnabled,f3VmTunnelCVlanId,
+        f3VmTunnelSVlanEnabled,f3VmTunnelSVlanId,
+        f3VmTunnelCOS,f3VmTunnelCIRLo,f3VmTunnelCIRHi,
+        f3VmTunnelEIRLo,f3VmTunnelEIRHi,f3VmTunnelBufferSize,
+        f3VmTunnelStorageType,f3VmTunnelRowStatus,
+        f3VmdatabaseAction
+        
+        }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects used to manage the VM functionality."
+    ::= { f3VmGroups 1 }
+
+
+END
