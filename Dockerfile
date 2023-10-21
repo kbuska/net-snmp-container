@@ -7,6 +7,7 @@ apt install snmpd -y && \
 apt install libltdl-dev -y && \
 apt install libperl-dev -y && \
 apt install wget -y && \
+apt install nano vim git iputils-ping -y && \
 apt install build-essential -y && \
 wget https://gigenet.dl.sourceforge.net/project/net-snmp/net-snmp/5.9.4/net-snmp-5.9.4.tar.gz && \
 tar -xf net-snmp-5.9.4.tar.gz && \
@@ -23,14 +24,14 @@ ENV MIBDIRS /net-snmp-5.9.4/mibs:/mibs:/root/.snmp/mibs:/usr/local/share/snmp/mi
 
 WORKDIR /net-snmp-5.9.4/mibs
 
-VOLUME [/mibs]
+VOLUME /mibs
 
 WORKDIR /
 
 COPY setup_mibdirs.sh /setup_mibdirs.sh
 
 ENTRYPOINT ["/setup_mibdirs.sh"]
-CMD ["your-default-command"]
+CMD ["/bin/sh -c /setup_mibdirs"]
 
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD snmptranslate 1.3.6.1.4.1.2544.1.12.8.1.21.1 || exit 1

@@ -1,0 +1,14 @@
+# version isn't needed as of 2020 for docker compose CLI. 
+# All 2.x and 3.x features supported
+# Docker Swarm still needs a 3.x version
+version: '3.9'
+
+services:  # containers. same as docker run
+  net-snmp-container: # a friendly name. this is also DNS name inside network
+    #image: kbuska/net-snmp-container # Optional if you use build:
+    image: netsnmpcontainer:dev # Optional if you use build:
+    volumes:
+      - ./mibs:/mibs
+    network_mode: "host"
+    stdin_open: true
+    tty: true
