@@ -19,15 +19,18 @@ RUN make && make install && make clean
 
 ENV LD_LIBRARY_PATH /usr/local/lib:$LD_LIBRARY_PATH
 ENV MIBS ALL
-ENV MIBDIRS /net-snmp-5.9.4/mibs:/net-snmp-5.9.4/mibs/adva-cpe:/root/.snmp/mibs:/usr/local/share/snmp/mibs
+ENV MIBDIRS /net-snmp-5.9.4/mibs:/mibs:/root/.snmp/mibs:/usr/local/share/snmp/mibs
 
 WORKDIR /net-snmp-5.9.4/mibs
-RUN mkdir adva-cpe
-WORKDIR /net-snmp-5.9.4/mibs/adva-cpe
 
-COPY ./mibs/adva-cpe/ /net-snmp-5.9.4/mibs/adva-cpe/
-
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD snmptranslate -m ALL 1.3.6.1.4.1.2544.1.12.8.1.21.1 || exit 1
+VOLUME [/mibs]
 
 WORKDIR /
+
+COPY setup_mibdirs.sh /setup_mibdirs.sh
+
+ENTRYPOINT ["/setup_mibdirs.sh"]
+CMD ["your-default-command"]
+
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD snmptranslate 1.3.6.1.4.1.2544.1.12.8.1.21.1 || exit 1
